@@ -6,6 +6,7 @@ import { AccountOverviewPage } from './pages/AccountOverviewPage';
 import { CatalogPage } from './pages/CatalogPage';
 import { LoginPage } from './pages/LoginPage';
 import { PlaceholderModulePage } from './pages/PlaceholderModulePage';
+import { PurchasePage } from './pages/PurchasePage';
 import { TwoFactorPage } from './pages/TwoFactorPage';
 
 export function AppRoutes() {
@@ -18,16 +19,7 @@ export function AppRoutes() {
         <Route element={<AppLayout />}>
           <Route path="/" element={<AccountOverviewPage />} />
           <Route path="/catalogo" element={<CatalogPage />} />
-          <Route
-            path="/comprar"
-            element={
-              <PlaceholderModulePage
-                titulo="Módulo Transaccional de Compras"
-                descripcion="Flujo de compra con confirmación previa y clasificación de estados (exitosa, rechazada, pendiente y error de comunicación)."
-                faseDestino="Fase 4"
-              />
-            }
-          />
+          <Route path="/comprar" element={<PurchasePage />} />
           <Route
             path="/historial"
             element={
