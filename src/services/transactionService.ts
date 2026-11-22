@@ -14,6 +14,11 @@ export interface ProcesarCompraParams {
   simular?: boolean;
 }
 
+export interface ConsultarHistorialParams {
+  clienteId?: number;
+  numeroCuenta?: string;
+}
+
 export class TransactionService {
   private readonly apiClient: ApiClient;
 
@@ -137,5 +142,74 @@ export class TransactionService {
       }
       throw error;
     }
+  }
+
+  async obtenerHistorialComprasExitosas(
+    params: ConsultarHistorialParams = {},
+  ): Promise<PurchaseTransactionResult[]> {
+    const queryParameters: Record<string, string> = {};
+    if (params.clienteId !== undefined && params.clienteId !== null) {
+      queryParameters.clienteId = String(params.clienteId);
+    }
+    if (params.numeroCuenta && params.numeroCuenta.trim().length > 0) {
+      queryParameters.numeroCuenta = params.numeroCuenta.trim();
+    }
+
+    try {
+      const response = await this.apiClient.getJson<unknown>(
+        '/api/gestopago/transacciones/historial/exitosas',
+        {
+          queryParameters: Object.keys(queryParameters).length > 0 ? queryParameters : undefined,
+        },
+      );
+      if (Array.isArray(response.data)) {
+        return response.data
+          .filter(
+            (item): item is Record<string, unknown> =>
+              Boolean(item) && typeof item === 'object' && !Array.isArray(item),
+          )
+          .map((item) => parsePurchaseTransactionResult(item))
+          .filter((tx) => tx.exitoso);
+      }
+    } catch (error) {
+      if (error instanceof ApiException) {
+        if (error.statusCode === 401 || error.statusCode !== 404) {
+          throw error;
+        }
+      } else {
+        throw error;
+      }
+    }
+
+    const fallbackResp = await this.apiClient.getJson<unknown>('/api/gestopago/transacciones');
+    if (Array.isArray(fallbackResp.data)) {
+      const cuentaLimpia = params.numeroCuenta?.trim();
+      return fallbackResp.data
+        .filter(
+          (item): item is Record<string, unknown> =>
+            Boolean(item) && typeof item === 'object' && !Array.isArray(item),
+        )
+        .map((item) => parsePurchaseTransactionResult(item))
+        .filter((tx) => {
+          if (!tx.exitoso) return false;
+          if (
+            cuentaLimpia &&
+            cuentaLimpia.length > 0 &&
+            tx.numeroCuenta &&
+            tx.numeroCuenta.length > 0
+          ) {
+            return tx.numeroCuenta === cuentaLimpia;
+          }
+          return true;
+        });
+    }
+    return [];
+  }
+
+  async consultarDetallePorUpc(upc: string): Promise<PurchaseTransactionResult> {
+    const response = await this.apiClient.getJson<Record<string, unknown>>(
+      `/api/gestopago/transacciones/${encodeURIComponent(upc.trim())}`,
+    );
+    return parsePurchaseTransactionResult(response.data ?? {});
   }
 }

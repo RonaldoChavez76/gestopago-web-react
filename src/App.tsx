@@ -4,8 +4,8 @@ import { ProtectedRoute } from './components/ProtectedRoute';
 import { SessionProvider } from './context/SessionContext';
 import { AccountOverviewPage } from './pages/AccountOverviewPage';
 import { CatalogPage } from './pages/CatalogPage';
+import { HistoryPage } from './pages/HistoryPage';
 import { LoginPage } from './pages/LoginPage';
-import { PlaceholderModulePage } from './pages/PlaceholderModulePage';
 import { PurchasePage } from './pages/PurchasePage';
 import { TwoFactorPage } from './pages/TwoFactorPage';
 
@@ -20,16 +20,7 @@ export function AppRoutes() {
           <Route path="/" element={<AccountOverviewPage />} />
           <Route path="/catalogo" element={<CatalogPage />} />
           <Route path="/comprar" element={<PurchasePage />} />
-          <Route
-            path="/historial"
-            element={
-              <PlaceholderModulePage
-                titulo="Historial de Compras Exitosas"
-                descripcion="Consulta sincronizada entre la aplicación móvil Flutter y la plataforma web React mostrando únicamente transacciones exitosas."
-                faseDestino="Fase 5"
-              />
-            }
-          />
+          <Route path="/historial" element={<HistoryPage />} />
         </Route>
       </Route>
 
