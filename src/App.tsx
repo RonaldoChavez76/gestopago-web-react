@@ -3,6 +3,7 @@ import { AppLayout } from './components/AppLayout';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { SessionProvider } from './context/SessionContext';
 import { AccountOverviewPage } from './pages/AccountOverviewPage';
+import { CatalogPage } from './pages/CatalogPage';
 import { LoginPage } from './pages/LoginPage';
 import { PlaceholderModulePage } from './pages/PlaceholderModulePage';
 import { TwoFactorPage } from './pages/TwoFactorPage';
@@ -16,16 +17,7 @@ export function AppRoutes() {
       <Route element={<ProtectedRoute />}>
         <Route element={<AppLayout />}>
           <Route path="/" element={<AccountOverviewPage />} />
-          <Route
-            path="/catalogo"
-            element={
-              <PlaceholderModulePage
-                titulo="Catálogo Dinámico de Productos GestoPago"
-                descripcion="Aquí se mostrarán las recargas telefónicas, pagos de servicios y pines digitales consumidos directamente desde el backend REST."
-                faseDestino="Fase 3"
-              />
-            }
-          />
+          <Route path="/catalogo" element={<CatalogPage />} />
           <Route
             path="/comprar"
             element={
