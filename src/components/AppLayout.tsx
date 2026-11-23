@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
 import {
+  BriefcaseBusiness,
   CheckCircle2,
   Globe,
   LogOut,
@@ -13,6 +14,7 @@ import {
   Wallet,
 } from 'lucide-react';
 import { useSession } from '../context/SessionContext';
+import { esUsuarioEjecutivo } from '../models/auth';
 import { LogoutConfirmModal } from './LogoutConfirmModal';
 
 const ENLACES_NAVEGACION = [
@@ -21,6 +23,13 @@ const ENLACES_NAVEGACION = [
   { to: '/historial', etiquetaDesktop: 'Historial Exitoso', etiquetaMovil: 'Historial', icon: ReceiptText },
   { to: '/perfil', etiquetaDesktop: 'Mi Perfil', etiquetaMovil: 'Perfil', icon: UserCog },
 ];
+
+const ENLACE_EJECUTIVO = {
+  to: '/ejecutivo',
+  etiquetaDesktop: 'Panel Ejecutivo',
+  etiquetaMovil: 'Ejecutivo',
+  icon: BriefcaseBusiness,
+};
 
 export function formatearMonedaMxn(monto?: number): string {
   if (monto === undefined || monto === null || Number.isNaN(monto)) {
@@ -41,6 +50,11 @@ export function AppLayout() {
   if (!sesionActual) {
     return null;
   }
+
+  const esEjecutivo = esUsuarioEjecutivo(sesionActual);
+  const enlacesNavegacion = esEjecutivo
+    ? [...ENLACES_NAVEGACION, ENLACE_EJECUTIVO]
+    : ENLACES_NAVEGACION;
 
   const manejarVerificarVigencia = async () => {
     setVerificando(true);
@@ -72,7 +86,7 @@ export function AppLayout() {
         </div>
 
         <nav className="flex-1 px-3 py-4 space-y-1">
-          {ENLACES_NAVEGACION.map((item) => {
+          {enlacesNavegacion.map((item) => {
             const Icon = item.icon;
             return (
               <NavLink
@@ -102,6 +116,9 @@ export function AppLayout() {
             <p className="text-xs text-slate-500 mt-1 truncate">
               {sesionActual.nombreCliente ?? sesionActual.correo}
             </p>
+            {esEjecutivo && (
+              <p className="text-[11px] font-bold text-amber-700 mt-1">Perfil EJECUTIVO</p>
+            )}
           </div>
         </div>
       </aside>
@@ -118,6 +135,11 @@ export function AppLayout() {
                 <Monitor className="w-3.5 h-3.5" />
                 Sesión {sesionActual.plataforma}
               </span>
+              {esEjecutivo && (
+                <span className="hidden sm:inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-800 shrink-0">
+                  EJECUTIVO
+                </span>
+              )}
             </div>
 
             <div className="flex items-center gap-2 shrink-0">
@@ -157,8 +179,12 @@ export function AppLayout() {
         </main>
       </div>
 
-      <nav className="lg:hidden fixed bottom-0 inset-x-0 z-30 bg-white border-t border-borde grid grid-cols-4">
-        {ENLACES_NAVEGACION.map((item) => {
+      <nav
+        className={`lg:hidden fixed bottom-0 inset-x-0 z-30 bg-white border-t border-borde grid ${
+          enlacesNavegacion.length > 4 ? 'grid-cols-5' : 'grid-cols-4'
+        }`}
+      >
+        {enlacesNavegacion.map((item) => {
           const Icon = item.icon;
           return (
             <NavLink

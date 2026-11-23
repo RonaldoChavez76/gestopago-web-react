@@ -3,6 +3,7 @@ import { ApiClient, ApiException } from '../core/network/apiClient';
 import {
   type Login2faChallenge,
   type UserSession,
+  normalizarRolUsuario,
   parseLogin2faChallenge,
   parseUserSession,
 } from '../models/auth';
@@ -152,6 +153,10 @@ export class AuthService {
 
       return {
         ...sesionActual,
+        rol:
+          data.rol !== undefined && data.rol !== null && String(data.rol).trim() !== ''
+            ? normalizarRolUsuario(data.rol)
+            : (sesionActual.rol ?? 'CLIENTE'),
         usuarioId: parseId(data.usuarioId, sesionActual.usuarioId),
         clienteId: parseId(data.clienteId, sesionActual.clienteId),
         saldoCuenta: Number.isNaN(saldoActualizado) ? sesionActual.saldoCuenta : saldoActualizado,
