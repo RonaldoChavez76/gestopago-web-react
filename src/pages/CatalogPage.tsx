@@ -252,27 +252,27 @@ export function CatalogPage({ catalogServiceOverride }: CatalogPageProps) {
       )}
 
       {!cargando && !errorMensaje && productosFiltrados.length > 0 && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
           {productosFiltrados.map((producto) => (
             <article
               key={`${producto.idProducto}-${producto.nombre}`}
-              className="bg-white rounded-2xl border border-borde p-5 flex flex-col justify-between hover:border-primario/40 hover:shadow-sm transition-all"
+              className="bg-white rounded-2xl border border-borde p-5 flex flex-col justify-between gap-4 hover:border-primario/40 hover:shadow-sm transition-all"
             >
               <div>
                 <div className="flex items-start justify-between gap-2.5">
                   <div className="flex items-start gap-3 min-w-0">
                     <ProductVisualBadge producto={producto} />
                     <div className="min-w-0">
-                      <h2 className="text-sm font-bold text-slate-900 line-clamp-1">
+                      <h2 className="text-sm font-bold text-slate-900 line-clamp-2 leading-snug">
                         {producto.nombre}
                       </h2>
-                      <p className="text-xs text-slate-500 truncate mt-0.5">
+                      <p className="text-xs text-slate-500 break-words mt-0.5">
                         {producto.servicio}
                       </p>
                     </div>
                   </div>
                   <span
-                    className={`shrink-0 px-2 py-0.5 rounded-lg text-[11px] font-bold ${
+                    className={`shrink-0 px-2.5 py-0.5 rounded-full text-[11px] font-bold ${
                       producto.disponible
                         ? 'bg-emerald-50 text-emerald-700'
                         : 'bg-red-50 text-red-700'
@@ -287,32 +287,34 @@ export function CatalogPage({ catalogServiceOverride }: CatalogPageProps) {
                 </p>
               </div>
 
-              <div className="mt-4 pt-3 border-t border-borde flex items-center justify-between gap-2">
-                <div className="min-w-0">
-                  <p className="text-sm font-extrabold text-primario-oscuro truncate">
+              <div className="pt-3.5 border-t border-borde space-y-3">
+                <div className="flex items-baseline justify-between gap-2 flex-wrap">
+                  <p className="text-base font-extrabold text-primario-oscuro whitespace-nowrap">
                     {producto.precio > 0
                       ? `$${producto.precio.toFixed(2)} MXN`
                       : 'Monto abierto'}
                   </p>
-                  <p className="text-[11px] text-slate-400">ID #{producto.idProducto}</p>
+                  <p className="text-[11px] font-medium text-slate-500">
+                    Prod #{producto.idProducto} • Serv #{producto.idServicio}
+                  </p>
                 </div>
 
-                <div className="flex items-center gap-1.5 shrink-0">
+                <div className="grid grid-cols-2 gap-2">
                   <button
                     type="button"
                     onClick={() => setProductoDetalle(producto)}
-                    className="inline-flex items-center gap-1 rounded-xl border border-borde px-2.5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 cursor-pointer"
+                    className="w-full inline-flex items-center justify-center gap-1.5 rounded-xl border border-borde px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 cursor-pointer"
                   >
-                    <Info className="w-3.5 h-3.5 text-primario" />
+                    <Info className="w-3.5 h-3.5 text-primario shrink-0" />
                     <span>Ver detalle</span>
                   </button>
                   <button
                     type="button"
                     disabled={!producto.disponible}
                     onClick={() => irACompra(producto)}
-                    className="inline-flex items-center gap-1 rounded-xl bg-primario-suave px-3 py-2 text-xs font-bold text-primario-oscuro hover:bg-primario hover:text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                    className="w-full inline-flex items-center justify-center gap-1.5 rounded-xl bg-primario-suave px-3 py-2 text-xs font-bold text-primario-oscuro hover:bg-primario hover:text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
                   >
-                    <ShoppingCart className="w-3.5 h-3.5" />
+                    <ShoppingCart className="w-3.5 h-3.5 shrink-0" />
                     <span>Comprar</span>
                   </button>
                 </div>

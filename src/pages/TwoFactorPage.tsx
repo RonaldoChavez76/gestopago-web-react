@@ -6,6 +6,7 @@ import {
   CheckCircle2,
   Copy,
   KeyRound,
+  Mail,
   RefreshCw,
   ShieldCheck,
   Timer,
@@ -80,7 +81,11 @@ export function TwoFactorPage() {
     try {
       const nuevo = await reenviarCodigo2FA();
       setSegundosRestantes(nuevo.expiraEnSegundos);
-      setAvisoReenvio('Nuevo código OTP de 6 dígitos generado en el servidor.');
+      setAvisoReenvio(
+        nuevo.correoEnviado
+          ? `Nuevo código OTP enviado a ${nuevo.correoDestinoEnmascarado ?? nuevo.correo}.`
+          : 'Nuevo código OTP de 6 dígitos generado en el servidor.',
+      );
     } catch (error) {
       setErrorMensaje(
         error instanceof ApiException
@@ -136,6 +141,17 @@ export function TwoFactorPage() {
             única en <span className="font-semibold text-slate-900">{challenge.plataforma}</span>.
           </p>
         </div>
+
+        {challenge.correoEnviado && (
+          <div className="mt-5 rounded-xl border border-emerald-200 bg-emerald-50 p-3.5 flex items-start gap-2.5 text-xs sm:text-sm text-emerald-900">
+            <Mail className="w-4 h-4 text-emerald-700 shrink-0 mt-0.5" />
+            <span>
+              Enviamos tu código OTP de 6 dígitos a{' '}
+              <strong>{challenge.correoDestinoEnmascarado ?? challenge.correo}</strong>. Revisa tu
+              bandeja de entrada o carpeta de spam.
+            </span>
+          </div>
+        )}
 
         {challenge.codigoOtp && (
           <div className="mt-5 rounded-xl border border-primario/25 bg-primario-suave/50 p-4 text-center">

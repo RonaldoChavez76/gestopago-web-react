@@ -55,7 +55,7 @@ export class AuthService {
         '/api/seguridad/2fa/solicitar',
         {
           requiereAuth: false,
-          body: { numeroCuenta: '4229215075268914' },
+          body: { numeroCuenta: '4229215075268914', motivo: 'LOGIN' },
         },
       );
       const otpData = otpResp.data ?? {};
@@ -71,6 +71,13 @@ export class AuthService {
         codigoOtp: String(otpData.codigoOtp ?? ''),
         expiraEnSegundos,
         mensaje: String(otpData.mensaje ?? 'Código OTP 2FA generado en el servidor.'),
+        correoEnviado:
+          typeof otpData.correoEnviado === 'boolean' ? otpData.correoEnviado : undefined,
+        correoDestinoEnmascarado:
+          typeof otpData.correoDestinoEnmascarado === 'string' &&
+          otpData.correoDestinoEnmascarado.trim().length > 0
+            ? otpData.correoDestinoEnmascarado.trim()
+            : undefined,
       };
     }
   }
@@ -134,8 +141,19 @@ export class AuthService {
             ? Number(saldoRaw)
             : sesionActual.saldoCuenta;
 
+      const parseId = (raw: unknown, fallback?: number) => {
+        if (typeof raw === 'number' && !Number.isNaN(raw)) return raw;
+        if (typeof raw === 'string' && raw.trim() !== '') {
+          const n = Number(raw);
+          if (!Number.isNaN(n)) return n;
+        }
+        return fallback;
+      };
+
       return {
         ...sesionActual,
+        usuarioId: parseId(data.usuarioId, sesionActual.usuarioId),
+        clienteId: parseId(data.clienteId, sesionActual.clienteId),
         saldoCuenta: Number.isNaN(saldoActualizado) ? sesionActual.saldoCuenta : saldoActualizado,
         numeroCuenta:
           data.numeroCuenta !== undefined && data.numeroCuenta !== null
@@ -145,6 +163,10 @@ export class AuthService {
           data.nombreCliente !== undefined && data.nombreCliente !== null
             ? String(data.nombreCliente)
             : sesionActual.nombreCliente,
+        correo:
+          data.correo !== undefined && data.correo !== null
+            ? String(data.correo)
+            : sesionActual.correo,
       };
     } catch (error) {
       if (error instanceof ApiException && error.statusCode === 401) {

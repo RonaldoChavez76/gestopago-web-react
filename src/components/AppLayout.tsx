@@ -9,6 +9,7 @@ import {
   RefreshCw,
   ShieldCheck,
   Store,
+  UserCog,
   Wallet,
 } from 'lucide-react';
 import { useSession } from '../context/SessionContext';
@@ -18,6 +19,7 @@ const ENLACES_NAVEGACION = [
   { to: '/', etiquetaDesktop: 'Mi Cuenta y Sesión', etiquetaMovil: 'Mi Sesión', icon: ShieldCheck },
   { to: '/catalogo', etiquetaDesktop: 'Catálogo', etiquetaMovil: 'Catálogo', icon: Store },
   { to: '/historial', etiquetaDesktop: 'Historial Exitoso', etiquetaMovil: 'Historial', icon: ReceiptText },
+  { to: '/perfil', etiquetaDesktop: 'Mi Perfil', etiquetaMovil: 'Perfil', icon: UserCog },
 ];
 
 export function formatearMonedaMxn(monto?: number): string {
@@ -156,7 +158,7 @@ export function AppLayout() {
         </main>
       </div>
 
-      <nav className="lg:hidden fixed bottom-0 inset-x-0 z-30 bg-white border-t border-borde grid grid-cols-3">
+      <nav className="lg:hidden fixed bottom-0 inset-x-0 z-30 bg-white border-t border-borde grid grid-cols-4">
         {ENLACES_NAVEGACION.map((item) => {
           const Icon = item.icon;
           return (

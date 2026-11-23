@@ -95,14 +95,10 @@ export class ApiClient {
       if (error instanceof ApiException) {
         throw error;
       }
-      if (error instanceof DOMException && error.name === 'AbortError') {
-        throw new ApiException({
-          statusCode: 504,
-          message:
-            'Tiempo de espera agotado al comunicarse con el servidor. Verifica tu conexión.',
-        });
-      }
-      if (error instanceof Error && error.name === 'AbortError') {
+      if (
+        (error instanceof DOMException && error.name === 'AbortError') ||
+        (error instanceof Error && error.name === 'AbortError')
+      ) {
         throw new ApiException({
           statusCode: 504,
           message:
@@ -122,6 +118,28 @@ export class ApiClient {
     path: string,
     options: PostRequestOptions = {},
   ): Promise<ApiEnvelope<T>> {
+    return this.enviarJson<T>('POST', path, options);
+  }
+
+  async putJson<T = Record<string, unknown>>(
+    path: string,
+    options: PostRequestOptions = {},
+  ): Promise<ApiEnvelope<T>> {
+    return this.enviarJson<T>('PUT', path, options);
+  }
+
+  async deleteJson<T = Record<string, unknown>>(
+    path: string,
+    options: PostRequestOptions = {},
+  ): Promise<ApiEnvelope<T>> {
+    return this.enviarJson<T>('DELETE', path, options);
+  }
+
+  private async enviarJson<T = Record<string, unknown>>(
+    method: 'POST' | 'PUT' | 'DELETE',
+    path: string,
+    options: PostRequestOptions = {},
+  ): Promise<ApiEnvelope<T>> {
     const requiereAuth = options.requiereAuth ?? true;
     const timeoutMs = options.timeoutMs ?? 35000;
     const url = buildEndpoint(path);
@@ -130,7 +148,7 @@ export class ApiClient {
 
     try {
       const response = await this.fetchFn(url, {
-        method: 'POST',
+        method,
         headers: this.construirHeaders(requiereAuth),
         body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
         signal: controller.signal,
@@ -140,14 +158,10 @@ export class ApiClient {
       if (error instanceof ApiException) {
         throw error;
       }
-      if (error instanceof DOMException && error.name === 'AbortError') {
-        throw new ApiException({
-          statusCode: 504,
-          message:
-            'La solicitud excedió el tiempo de espera. Por seguridad no reintentes cargos sin verificar tu historial.',
-        });
-      }
-      if (error instanceof Error && error.name === 'AbortError') {
+      if (
+        (error instanceof DOMException && error.name === 'AbortError') ||
+        (error instanceof Error && error.name === 'AbortError')
+      ) {
         throw new ApiException({
           statusCode: 504,
           message:
