@@ -64,4 +64,11 @@ export class ClienteService {
     });
     return String(response.message ?? 'Cliente dado de baja lógicamente.');
   }
+
+  async reactivarCliente(clienteId: number): Promise<string> {
+    const response = await this.apiClient.putJson<unknown>('/clientes/reactivar', {
+      body: { clienteId },
+    });
+    return String(response.message ?? 'Cliente reactivado correctamente.');
+  }
 }
