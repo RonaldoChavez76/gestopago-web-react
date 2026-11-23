@@ -75,7 +75,7 @@ export class AuthService {
           typeof otpData.correoEnviado === 'boolean' ? otpData.correoEnviado : undefined,
         correoDestinoEnmascarado:
           typeof otpData.correoDestinoEnmascarado === 'string' &&
-          otpData.correoDestinoEnmascarado.trim().length > 0
+            otpData.correoDestinoEnmascarado.trim().length > 0
             ? otpData.correoDestinoEnmascarado.trim()
             : undefined,
       };

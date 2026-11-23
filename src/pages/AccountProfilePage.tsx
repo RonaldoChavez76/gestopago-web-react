@@ -17,15 +17,15 @@ import { useSession } from '../context/SessionContext';
 import { ApiException } from '../core/network/apiClient';
 import {
   type ClientePerfil,
+  REGEX_PASSWORD_SEGURA,
   construirNombreCompleto,
+  validarDatosClienteBase,
 } from '../models/cliente';
 import { ClienteService } from '../services/clienteService';
 
 export interface AccountProfilePageProps {
   clienteServiceOverride?: ClienteService;
 }
-
-const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[^A-Za-z0-9]).{8,}$/;
 
 export function AccountProfilePage({ clienteServiceOverride }: AccountProfilePageProps) {
   const navigate = useNavigate();
@@ -110,55 +110,6 @@ export function AccountProfilePage({ clienteServiceOverride }: AccountProfilePag
     );
   };
 
-  const validarPerfil = (datos: ClientePerfil): string | null => {
-    if (datos.primerNombre.trim().length < 2) {
-      return 'El primer nombre debe tener al menos 2 caracteres.';
-    }
-    if (datos.apellidoPaterno.trim().length < 2) {
-      return 'El apellido paterno debe tener al menos 2 caracteres.';
-    }
-    if (datos.apellidoMaterno.trim().length < 2) {
-      return 'El apellido materno debe tener al menos 2 caracteres.';
-    }
-    if (!/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(datos.fechaNacimiento.trim())) {
-      return 'La fecha de nacimiento debe tener el formato AAAA-MM-DD.';
-    }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(datos.correo.trim())) {
-      return 'Ingresa un correo electrónico válido.';
-    }
-    if (!/^[0-9]{10}$/.test(datos.telefonoMovil.trim())) {
-      return 'El teléfono móvil debe tener exactamente 10 dígitos numéricos.';
-    }
-    if (
-      datos.telefonoAlternativo.trim().length > 0 &&
-      !/^[0-9]{10}$/.test(datos.telefonoAlternativo.trim())
-    ) {
-      return 'El teléfono alternativo debe tener 10 dígitos o permanecer vacío.';
-    }
-    if (datos.ocupacion.trim().length === 0 || datos.empresa.trim().length === 0) {
-      return 'Ocupación y empresa son obligatorios.';
-    }
-    const ingreso = Number.parseFloat(datos.ingresoMensual.trim());
-    if (Number.isNaN(ingreso) || ingreso <= 0) {
-      return 'El ingreso mensual debe ser mayor a $0.00.';
-    }
-    const d = datos.domicilio;
-    if (
-      d.calle.trim().length === 0 ||
-      d.numeroExterior.trim().length === 0 ||
-      d.colonia.trim().length === 0 ||
-      d.municipio.trim().length === 0 ||
-      d.estado.trim().length === 0 ||
-      d.pais.trim().length === 0
-    ) {
-      return 'Completa todos los campos obligatorios del domicilio.';
-    }
-    if (!/^[0-9]{5}$/.test(d.codigoPostal.trim())) {
-      return 'El código postal debe tener exactamente 5 dígitos.';
-    }
-    return null;
-  };
-
   const manejarGuardarPerfil = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!perfil) return;
@@ -166,7 +117,7 @@ export function AccountProfilePage({ clienteServiceOverride }: AccountProfilePag
     setErrorPerfil(null);
     setExitoPerfil(null);
 
-    const err = validarPerfil(perfil);
+    const err = validarDatosClienteBase(perfil);
     if (err) {
       setErrorPerfil(err);
       return;
@@ -204,7 +155,7 @@ export function AccountProfilePage({ clienteServiceOverride }: AccountProfilePag
       setErrorPassword('Ingresa tu contraseña actual.');
       return;
     }
-    if (!PASSWORD_REGEX.test(passwordNueva)) {
+    if (!REGEX_PASSWORD_SEGURA.test(passwordNueva)) {
       setErrorPassword(
         'La nueva contraseña debe tener al menos 8 caracteres, mayúscula, minúscula, número y símbolo.',
       );

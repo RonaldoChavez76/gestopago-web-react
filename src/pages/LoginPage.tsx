@@ -1,8 +1,8 @@
 import { type FormEvent, useEffect, useState } from 'react';
-import { Navigate, useNavigate } from 'react-router-dom';
+import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import {
   AlertCircle,
-  Bolt,
+  CheckCircle2,
   Cloud,
   Eye,
   EyeOff,
@@ -12,6 +12,7 @@ import {
   Mail,
   Monitor,
   Shield,
+  UserPlus,
 } from 'lucide-react';
 import {
   BACKEND_ENVIRONMENTS,
@@ -29,6 +30,12 @@ import type { ConflictoSesion } from '../models/auth';
 
 export function LoginPage() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const stateRegistro = location.state as {
+    correoRegistrado?: string;
+    cuentaRegistrada?: string;
+  } | null;
+
   const {
     estaAutenticado,
     cargando,
@@ -37,7 +44,7 @@ export function LoginPage() {
     iniciarPreLogin,
   } = useSession();
 
-  const [correo, setCorreo] = useState('');
+  const [correo, setCorreo] = useState(() => stateRegistro?.correoRegistrado ?? '');
   const [password, setPassword] = useState('');
   const [mostrarPassword, setMostrarPassword] = useState(false);
   const [errorFormulario, setErrorFormulario] = useState<string | null>(null);
@@ -53,12 +60,6 @@ export function LoginPage() {
   if (estaAutenticado) {
     return <Navigate to="/" replace />;
   }
-
-  const llenarUsuarioPrueba = () => {
-    setCorreo('ana.lopez.prueba@example.com');
-    setPassword('Prueba2026!');
-    setErrorFormulario(null);
-  };
 
   const validarCampos = (): string | null => {
     const correoLimpio = correo.trim();
@@ -164,6 +165,20 @@ export function LoginPage() {
           </div>
         </div>
 
+        {stateRegistro?.correoRegistrado && (
+          <div
+            role="status"
+            className="rounded-xl border border-emerald-200 bg-emerald-50 p-3.5 flex items-start gap-2.5 text-sm text-emerald-900"
+          >
+            <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
+            <p className="font-medium">
+              Cuenta registrada
+              {stateRegistro.cuentaRegistrada ? ` (${stateRegistro.cuentaRegistrada})` : ''}. Inicia
+              sesión con tu contraseña y código 2FA.
+            </p>
+          </div>
+        )}
+
         {mensajeAlertaSesion && (
           <div
             role="status"
@@ -189,7 +204,7 @@ export function LoginPage() {
                 id="correo"
                 type="email"
                 autoComplete="email"
-                placeholder="ana.lopez.prueba@example.com"
+                placeholder="correo@ejemplo.com"
                 value={correo}
                 onChange={(e) => setCorreo(e.target.value)}
                 className="w-full rounded-xl border border-borde bg-white pl-10 pr-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-primario focus:outline-none focus:ring-2 focus:ring-primario/20"
@@ -242,15 +257,13 @@ export function LoginPage() {
             <span>{cargando ? 'Validando credenciales...' : 'Iniciar Sesión con 2FA'}</span>
           </button>
 
-          <button
-            type="button"
-            disabled={cargando}
-            onClick={llenarUsuarioPrueba}
-            className="w-full inline-flex items-center justify-center gap-2 rounded-xl border border-borde bg-white px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-60 transition-colors cursor-pointer"
+          <Link
+            to="/registro"
+            className="w-full inline-flex items-center justify-center gap-2 rounded-xl border border-borde bg-white px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors"
           >
-            <Bolt className="w-4 h-4 text-primario" />
-            <span>Cargar credenciales de prueba (Ana)</span>
-          </button>
+            <UserPlus className="w-4 h-4 text-primario" />
+            <span>¿No tienes cuenta? Regístrate aquí</span>
+          </Link>
         </form>
       </div>
 
