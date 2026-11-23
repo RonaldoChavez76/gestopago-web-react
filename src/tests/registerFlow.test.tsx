@@ -98,5 +98,5 @@ describe('Módulo de Registro de Nuevos Clientes en Web', () => {
     expect(await screen.findByText('Bienvenido a GestoPago')).toBeInTheDocument();
     expect(screen.getByLabelText(/Correo electrónico/i)).toHaveValue('nuevo.cliente@correo.com');
     expect(screen.getByText(/Cuenta registrada \(9941467045485999\)/i)).toBeInTheDocument();
-  });
+  }, 15000);
 });

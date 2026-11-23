@@ -146,7 +146,10 @@ export function PurchasePage({
     if (cuenta.trim().length === 0) {
       return 'Ingresa el número de cuenta bancaria.';
     }
-    if (codigo2FA.trim().length > 0 && !/^[0-9]{6}$/.test(codigo2FA.trim())) {
+    if (codigo2FA.trim().length === 0) {
+      return 'Solicita e ingresa el código 2FA de 6 dígitos para autorizar la compra.';
+    }
+    if (!/^[0-9]{6}$/.test(codigo2FA.trim())) {
       return 'El código 2FA debe contener exactamente 6 dígitos numéricos.';
     }
     return null;
@@ -306,7 +309,7 @@ export function PurchasePage({
               htmlFor="codigo-2fa-compra"
               className="block text-sm font-semibold text-slate-700 mb-1.5"
             >
-              Código 2FA OTP (6 dígitos)
+              Código 2FA OTP (6 dígitos) *
             </label>
             <div className="flex gap-2">
               <div className="relative flex-1">
@@ -316,7 +319,7 @@ export function PurchasePage({
                   type="text"
                   inputMode="numeric"
                   maxLength={6}
-                  placeholder="Solicita o ingresa tu OTP"
+                  placeholder="Ingresa el código de 6 dígitos"
                   value={codigo2FA}
                   onChange={(e) =>
                     setCodigo2FA(e.target.value.replace(/[^0-9]/g, '').slice(0, 6))

@@ -226,6 +226,7 @@ describe('Fase 4: Módulo de Compras, Confirmación 2FA y Clasificación de Esta
       </MemoryRouter>,
     );
 
+    await user.type(screen.getByLabelText(/Código 2FA OTP/i), '482910');
     await user.click(screen.getByRole('button', { name: /Continuar a Confirmación/i }));
     const modal = await screen.findByRole('dialog');
     await user.click(within(modal).getByRole('button', { name: /Confirmar y Pagar/i }));
@@ -235,6 +236,35 @@ describe('Fase 4: Módulo de Compras, Confirmación 2FA y Clasificación de Esta
     expect(
       screen.queryByRole('button', { name: /Ver en Mi Historial de Compras Exitosas/i }),
     ).not.toBeInTheDocument();
+  });
+
+  it('impide continuar a confirmacion si el codigo 2FA esta vacio', async () => {
+    const user = userEvent.setup();
+    const storage = new SessionStorageService();
+    storage.guardarSesion(crearSesionActiva());
+
+    const fetchMock = vi.fn<typeof fetch>();
+    const apiClient = new ApiClient({ sessionStorage: storage, fetchFn: fetchMock });
+
+    render(
+      <MemoryRouter initialEntries={['/comprar']}>
+        <SessionProvider storageOverride={storage} apiClientOverride={apiClient} enableAutoSync={false}>
+          <Routes>
+            <Route path="/comprar" element={<PurchasePage productoOverride={PRODUCTO_RECARGA} />} />
+          </Routes>
+        </SessionProvider>
+      </MemoryRouter>,
+    );
+
+    await user.click(screen.getByRole('button', { name: /Continuar a Confirmación/i }));
+
+    expect(
+      await screen.findByText(
+        'Solicita e ingresa el código 2FA de 6 dígitos para autorizar la compra.',
+      ),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it('muestra estado amigable con acceso al catalogo cuando se entra a /comprar sin producto', () => {
