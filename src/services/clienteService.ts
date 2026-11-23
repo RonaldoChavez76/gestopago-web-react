@@ -1,8 +1,12 @@
 import { ApiClient } from '../core/network/apiClient';
 import {
   type ClientePerfil,
+  type RegistroClienteForm,
+  type RegistroClienteResultado,
   parseClientePerfil,
+  parseRegistroClienteResultado,
   toActualizarClientePayload,
+  toRegistroClientePayload,
 } from '../models/cliente';
 
 export class ClienteService {
@@ -10,6 +14,14 @@ export class ClienteService {
 
   constructor(options: { apiClient: ApiClient }) {
     this.apiClient = options.apiClient;
+  }
+
+  async registrarCliente(form: RegistroClienteForm): Promise<RegistroClienteResultado> {
+    const response = await this.apiClient.postJson<Record<string, unknown>>('/clientes', {
+      requiereAuth: false,
+      body: toRegistroClientePayload(form),
+    });
+    return parseRegistroClienteResultado(response.data ?? {});
   }
 
   async consultarPerfil(clienteId: number): Promise<ClientePerfil> {

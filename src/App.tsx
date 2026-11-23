@@ -8,12 +8,14 @@ import { CatalogPage } from './pages/CatalogPage';
 import { HistoryPage } from './pages/HistoryPage';
 import { LoginPage } from './pages/LoginPage';
 import { PurchasePage } from './pages/PurchasePage';
+import { RegisterPage } from './pages/RegisterPage';
 import { TwoFactorPage } from './pages/TwoFactorPage';
 
 export function AppRoutes() {
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/registro" element={<RegisterPage />} />
       <Route path="/verificacion-2fa" element={<TwoFactorPage />} />
 
       <Route element={<ProtectedRoute />}>

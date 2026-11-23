@@ -167,11 +167,10 @@ export function CatalogPage({ catalogServiceOverride }: CatalogPageProps) {
             type="button"
             aria-pressed={soloDisponibles}
             onClick={() => setSoloDisponibles((prev) => !prev)}
-            className={`inline-flex items-center justify-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-semibold transition-colors cursor-pointer ${
-              soloDisponibles
-                ? 'border-primario bg-primario-suave text-primario-oscuro'
-                : 'border-borde bg-white text-slate-700 hover:bg-slate-50'
-            }`}
+            className={`inline-flex items-center justify-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-semibold transition-colors cursor-pointer ${soloDisponibles
+              ? 'border-primario bg-primario-suave text-primario-oscuro'
+              : 'border-borde bg-white text-slate-700 hover:bg-slate-50'
+              }`}
           >
             <Filter className="w-4 h-4" />
             <span>Solo disponibles</span>
@@ -186,11 +185,10 @@ export function CatalogPage({ catalogServiceOverride }: CatalogPageProps) {
                 key={cat}
                 type="button"
                 onClick={() => setCategoriaSeleccionada(cat)}
-                className={`px-3.5 py-1.5 rounded-full text-xs sm:text-sm font-semibold border transition-colors cursor-pointer ${
-                  seleccionada
-                    ? 'bg-primario text-white border-primario'
-                    : 'bg-fondo text-slate-700 border-borde hover:bg-slate-100'
-                }`}
+                className={`px-3.5 py-1.5 rounded-full text-xs sm:text-sm font-semibold border transition-colors cursor-pointer ${seleccionada
+                  ? 'bg-primario text-white border-primario'
+                  : 'bg-fondo text-slate-700 border-borde hover:bg-slate-100'
+                  }`}
               >
                 {cat} ({contadoresPorCategoria[cat]})
               </button>
@@ -272,11 +270,10 @@ export function CatalogPage({ catalogServiceOverride }: CatalogPageProps) {
                     </div>
                   </div>
                   <span
-                    className={`shrink-0 px-2.5 py-0.5 rounded-full text-[11px] font-bold ${
-                      producto.disponible
-                        ? 'bg-emerald-50 text-emerald-700'
-                        : 'bg-red-50 text-red-700'
-                    }`}
+                    className={`shrink-0 px-2.5 py-0.5 rounded-full text-[11px] font-bold ${producto.disponible
+                      ? 'bg-emerald-50 text-emerald-700'
+                      : 'bg-red-50 text-red-700'
+                      }`}
                   >
                     {producto.disponible ? 'Disponible' : 'No disponible'}
                   </span>

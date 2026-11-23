@@ -80,10 +80,9 @@ export function AppLayout() {
                 to={item.to}
                 end={item.to === '/'}
                 className={({ isActive }) =>
-                  `flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-colors ${
-                    isActive
-                      ? 'bg-primario-suave text-primario-oscuro'
-                      : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                  `flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-colors ${isActive
+                    ? 'bg-primario-suave text-primario-oscuro'
+                    : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
                   }`
                 }
               >
@@ -168,8 +167,7 @@ export function AppLayout() {
               end={item.to === '/'}
               onClick={() => void verificarVigenciaSesion()}
               className={({ isActive }) =>
-                `flex flex-col items-center justify-center py-2 text-xs font-semibold ${
-                  isActive ? 'text-primario' : 'text-slate-500'
+                `flex flex-col items-center justify-center py-2 text-xs font-semibold ${isActive ? 'text-primario' : 'text-slate-500'
                 }`
               }
             >

@@ -161,7 +161,8 @@ describe('Escenario Práctico de Evaluación de Ana: Flutter Móvil y React Web 
       </MemoryRouter>,
     );
 
-    await user.click(screen.getByRole('button', { name: /Cargar credenciales de prueba \(Ana\)/i }));
+    await user.type(screen.getByLabelText(/Correo electrónico/i), 'ana.lopez.prueba@example.com');
+    await user.type(screen.getByLabelText(/^Contraseña$/i), 'Prueba2026!');
     await user.click(screen.getByRole('button', { name: /Iniciar Sesión con 2FA/i }));
 
     const modalConflicto = await screen.findByRole('dialog');

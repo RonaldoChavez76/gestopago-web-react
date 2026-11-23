@@ -108,7 +108,11 @@ describe('Fase 2: Flujo completo de Autenticación Web, 2FA y Sesión Única', (
 
     const { storage } = renderConSesion({ fetchMock, initialEntries: ['/login'] });
 
-    await user.click(screen.getByRole('button', { name: /Cargar credenciales de prueba \(Ana\)/i }));
+    expect(
+      screen.queryByRole('button', { name: /Cargar credenciales de prueba/i }),
+    ).not.toBeInTheDocument();
+    await user.type(screen.getByLabelText(/Correo electrónico/i), 'ana.lopez.prueba@example.com');
+    await user.type(screen.getByLabelText(/^Contraseña$/i), 'Prueba2026!');
     await user.click(screen.getByRole('button', { name: /Iniciar Sesión con 2FA/i }));
 
     expect(await screen.findByText('Verificación de Doble Factor (2FA)')).toBeInTheDocument();
@@ -170,7 +174,11 @@ describe('Fase 2: Flujo completo de Autenticación Web, 2FA y Sesión Única', (
 
     renderConSesion({ fetchMock, initialEntries: ['/login'] });
 
-    await user.click(screen.getByRole('button', { name: /Cargar credenciales de prueba \(Ana\)/i }));
+    expect(
+      screen.queryByRole('button', { name: /Cargar credenciales de prueba/i }),
+    ).not.toBeInTheDocument();
+    await user.type(screen.getByLabelText(/Correo electrónico/i), 'ana.lopez.prueba@example.com');
+    await user.type(screen.getByLabelText(/^Contraseña$/i), 'Prueba2026!');
     await user.click(screen.getByRole('button', { name: /Iniciar Sesión con 2FA/i }));
 
     const dialog = await screen.findByRole('dialog');
