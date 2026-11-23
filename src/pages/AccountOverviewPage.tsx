@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { ReceiptText, ShieldCheck, Store } from 'lucide-react';
+import { ReceiptText, ShieldCheck, Store, UserCog } from 'lucide-react';
 import { formatearMonedaMxn } from '../components/AppLayout';
 import { useSession } from '../context/SessionContext';
 
@@ -61,6 +61,13 @@ export function AccountOverviewPage() {
           >
             <ReceiptText className="w-4 h-4 text-primario" />
             <span>Consultar Historial de Compras</span>
+          </Link>
+          <Link
+            to="/perfil"
+            className="inline-flex items-center gap-2 rounded-xl border border-borde bg-white px-5 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors"
+          >
+            <UserCog className="w-4 h-4 text-primario" />
+            <span>Editar Perfil y Cuenta</span>
           </Link>
         </div>
       </section>

@@ -14,6 +14,8 @@ export interface Login2faChallenge {
   codigoOtp: string;
   expiraEnSegundos: number;
   mensaje: string;
+  correoEnviado?: boolean;
+  correoDestinoEnmascarado?: string;
 }
 
 export interface UserSession {
@@ -23,6 +25,7 @@ export interface UserSession {
   expiresAt?: string;
   sessionId?: string;
   plataforma: string;
+  usuarioId?: number;
   clienteId?: number;
   nombreCliente?: string;
   correo: string;
@@ -68,6 +71,8 @@ export function parseLogin2faChallenge(json: Record<string, unknown>): Login2faC
     codigoOtp: String(json.codigoOtp ?? ''),
     expiraEnSegundos: toNumberOrUndefined(json.expiraEnSegundos) ?? 300,
     mensaje: String(json.mensaje ?? 'Ingresa el código de verificación de 6 dígitos.'),
+    correoEnviado: typeof json.correoEnviado === 'boolean' ? json.correoEnviado : undefined,
+    correoDestinoEnmascarado: toStringOrUndefined(json.correoDestinoEnmascarado),
   };
 }
 
@@ -90,6 +95,7 @@ export function parseUserSession(
     expiresAt: parsedExpiresAt,
     sessionId: toStringOrUndefined(json.sessionId),
     plataforma: String(json.plataforma ?? 'WEB'),
+    usuarioId: toNumberOrUndefined(json.usuarioId),
     clienteId: toNumberOrUndefined(json.clienteId),
     nombreCliente: toStringOrUndefined(json.nombreCliente),
     correo: String(json.correo ?? correoFallback),

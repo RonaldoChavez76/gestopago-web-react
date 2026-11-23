@@ -53,6 +53,8 @@ export function PurchasePage({
   );
   const [codigo2FA, setCodigo2FA] = useState('');
   const [otpGenerado, setOtpGenerado] = useState<string | null>(null);
+  const [correoDestinoOtp, setCorreoDestinoOtp] = useState<string | null>(null);
+  const [correoEnviadoOtp, setCorreoEnviadoOtp] = useState(false);
   const [simular, setSimular] = useState(true);
   const [solicitandoOtp, setSolicitandoOtp] = useState(false);
   const [procesando, setProcesando] = useState(false);
@@ -97,9 +99,15 @@ export function PurchasePage({
     setSolicitandoOtp(true);
     setErrorFormulario(null);
     try {
-      const otp = await service.solicitarCodigo2FAParaCompra(cuenta);
-      setOtpGenerado(otp);
-      setCodigo2FA(otp);
+      const resultado = await service.solicitarReto2FAParaCompra(cuenta);
+      setCorreoEnviadoOtp(resultado.correoEnviado);
+      setCorreoDestinoOtp(resultado.correoDestinoEnmascarado ?? null);
+      if (resultado.codigoOtp.trim().length > 0) {
+        setOtpGenerado(resultado.codigoOtp);
+        setCodigo2FA(resultado.codigoOtp);
+      } else {
+        setOtpGenerado(null);
+      }
     } catch (error) {
       setErrorFormulario(
         error instanceof ApiException
@@ -331,6 +339,15 @@ export function PurchasePage({
                 <CheckCircle2 className="w-4 h-4 shrink-0" />
                 <span>
                   Código OTP generado en el servidor y autocompletado: {otpGenerado}
+                </span>
+              </p>
+            )}
+            {correoEnviadoOtp && (
+              <p className="mt-1.5 flex items-center gap-1.5 text-xs font-medium text-primario-oscuro">
+                <CheckCircle2 className="w-4 h-4 shrink-0 text-primario" />
+                <span>
+                  Código de autorización enviado al correo{' '}
+                  <strong>{correoDestinoOtp ?? sesionActual?.correo ?? 'registrado'}</strong>.
                 </span>
               </p>
             )}

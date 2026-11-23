@@ -14,6 +14,13 @@ export interface ProcesarCompraParams {
   simular?: boolean;
 }
 
+export interface SolicitudOtpCompraResultado {
+  codigoOtp: string;
+  correoEnviado: boolean;
+  correoDestinoEnmascarado?: string;
+  mensaje: string;
+}
+
 export interface ConsultarHistorialParams {
   clienteId?: number;
   numeroCuenta?: string;
@@ -26,15 +33,29 @@ export class TransactionService {
     this.apiClient = options.apiClient;
   }
 
-  async solicitarCodigo2FAParaCompra(numeroCuenta: string): Promise<string> {
+  async solicitarReto2FAParaCompra(numeroCuenta: string): Promise<SolicitudOtpCompraResultado> {
     const response = await this.apiClient.postJson<Record<string, unknown>>(
       '/api/seguridad/2fa/solicitar',
       {
-        body: { numeroCuenta: numeroCuenta.trim() },
+        body: { numeroCuenta: numeroCuenta.trim(), motivo: 'COMPRA' },
       },
     );
     const data = response.data ?? {};
-    return String(data.codigoOtp ?? '');
+    const correoEnmascaradoRaw = data.correoDestinoEnmascarado;
+    return {
+      codigoOtp: String(data.codigoOtp ?? ''),
+      correoEnviado: Boolean(data.correoEnviado),
+      correoDestinoEnmascarado:
+        typeof correoEnmascaradoRaw === 'string' && correoEnmascaradoRaw.trim().length > 0
+          ? correoEnmascaradoRaw.trim()
+          : undefined,
+      mensaje: String(data.mensaje ?? 'Código OTP 2FA generado.'),
+    };
+  }
+
+  async solicitarCodigo2FAParaCompra(numeroCuenta: string): Promise<string> {
+    const resultado = await this.solicitarReto2FAParaCompra(numeroCuenta);
+    return resultado.codigoOtp;
   }
 
   async procesarCompra({

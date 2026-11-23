@@ -38,6 +38,8 @@ export interface SessionContextValue {
   cancelarReto2FA: () => void;
   verificarVigenciaSesion: () => Promise<boolean>;
   actualizarSaldoLocal: (nuevoSaldo?: number) => void;
+  actualizarPerfilLocal: (datos: { nombreCliente?: string; correo?: string }) => void;
+  cerrarSesionTrasBaja: () => void;
   cerrarSesion: () => Promise<void>;
   limpiarAlertaSesion: () => void;
 }
@@ -111,6 +113,28 @@ export function SessionProvider({
     },
     [storage],
   );
+
+  const actualizarPerfilLocal = useCallback(
+    (datos: { nombreCliente?: string; correo?: string }) => {
+      const actual = storage.obtenerSesion();
+      if (!actual) return;
+      const actualizada: UserSession = {
+        ...actual,
+        nombreCliente: datos.nombreCliente?.trim() || actual.nombreCliente,
+        correo: datos.correo?.trim() || actual.correo,
+      };
+      storage.guardarSesion(actualizada);
+      setSesionActual(actualizada);
+    },
+    [storage],
+  );
+
+  const cerrarSesionTrasBaja = useCallback(() => {
+    storage.limpiarSesion();
+    setSesionActual(null);
+    setRetoPendiente(null);
+    setMensajeAlertaSesion('Tu cuenta fue dada de baja correctamente y tu sesión ha sido cerrada.');
+  }, [storage]);
 
   const iniciarPreLogin = useCallback(
     async ({
@@ -274,6 +298,8 @@ export function SessionProvider({
       cancelarReto2FA,
       verificarVigenciaSesion,
       actualizarSaldoLocal,
+      actualizarPerfilLocal,
+      cerrarSesionTrasBaja,
       cerrarSesion,
       limpiarAlertaSesion,
     }),
@@ -291,6 +317,8 @@ export function SessionProvider({
       cancelarReto2FA,
       verificarVigenciaSesion,
       actualizarSaldoLocal,
+      actualizarPerfilLocal,
+      cerrarSesionTrasBaja,
       cerrarSesion,
       limpiarAlertaSesion,
     ],
