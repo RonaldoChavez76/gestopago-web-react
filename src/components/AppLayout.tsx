@@ -14,7 +14,8 @@ import {
   Wallet,
 } from 'lucide-react';
 import { useSession } from '../context/SessionContext';
-import { esUsuarioEjecutivo } from '../models/auth';
+import { esCuentaActiva, esUsuarioEjecutivo } from '../models/auth';
+import { InactiveAccountGate } from './InactiveAccountGate';
 import { LogoutConfirmModal } from './LogoutConfirmModal';
 
 const ENLACES_NAVEGACION = [
@@ -52,9 +53,12 @@ export function AppLayout() {
   }
 
   const esEjecutivo = esUsuarioEjecutivo(sesionActual);
-  const enlacesNavegacion = esEjecutivo
-    ? [...ENLACES_NAVEGACION, ENLACE_EJECUTIVO]
-    : ENLACES_NAVEGACION;
+  const cuentaActiva = esCuentaActiva(sesionActual);
+  const enlacesNavegacion = !cuentaActiva
+    ? []
+    : esEjecutivo
+      ? [...ENLACES_NAVEGACION, ENLACE_EJECUTIVO]
+      : ENLACES_NAVEGACION;
 
   const manejarVerificarVigencia = async () => {
     setVerificando(true);
@@ -86,25 +90,31 @@ export function AppLayout() {
         </div>
 
         <nav className="flex-1 px-3 py-4 space-y-1">
-          {enlacesNavegacion.map((item) => {
-            const Icon = item.icon;
-            return (
-              <NavLink
-                key={item.to}
-                to={item.to}
-                end={item.to === '/'}
-                className={({ isActive }) =>
-                  `flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-colors ${isActive
-                    ? 'bg-primario-suave text-primario-oscuro'
-                    : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
-                  }`
-                }
-              >
-                <Icon className="w-4 h-4 shrink-0" />
-                <span>{item.etiquetaDesktop}</span>
-              </NavLink>
-            );
-          })}
+          {!cuentaActiva ? (
+            <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-xs text-red-800 font-medium">
+              Cuenta inactiva: las operaciones están restringidas hasta reactivarla.
+            </div>
+          ) : (
+            enlacesNavegacion.map((item) => {
+              const Icon = item.icon;
+              return (
+                <NavLink
+                  key={item.to}
+                  to={item.to}
+                  end={item.to === '/'}
+                  className={({ isActive }) =>
+                    `flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-colors ${isActive
+                      ? 'bg-primario-suave text-primario-oscuro'
+                      : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                    }`
+                  }
+                >
+                  <Icon className="w-4 h-4 shrink-0" />
+                  <span>{item.etiquetaDesktop}</span>
+                </NavLink>
+              );
+            })
+          )}
         </nav>
 
         <div className="p-4 border-t border-borde space-y-3">
@@ -135,7 +145,12 @@ export function AppLayout() {
                 <Monitor className="w-3.5 h-3.5" />
                 Sesión {sesionActual.plataforma}
               </span>
-              {esEjecutivo && (
+              {!cuentaActiva && (
+                <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-red-100 text-red-800 shrink-0">
+                  Cuenta Inactiva
+                </span>
+              )}
+              {cuentaActiva && esEjecutivo && (
                 <span className="hidden sm:inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-800 shrink-0">
                   EJECUTIVO
                 </span>
@@ -175,34 +190,36 @@ export function AppLayout() {
         </header>
 
         <main className="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 py-6">
-          <Outlet />
+          {cuentaActiva ? <Outlet /> : <InactiveAccountGate />}
         </main>
       </div>
 
-      <nav
-        className={`lg:hidden fixed bottom-0 inset-x-0 z-30 bg-white border-t border-borde grid ${
-          enlacesNavegacion.length > 4 ? 'grid-cols-5' : 'grid-cols-4'
-        }`}
-      >
-        {enlacesNavegacion.map((item) => {
-          const Icon = item.icon;
-          return (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              end={item.to === '/'}
-              onClick={() => void verificarVigenciaSesion()}
-              className={({ isActive }) =>
-                `flex flex-col items-center justify-center py-2 text-xs font-semibold ${isActive ? 'text-primario' : 'text-slate-500'
-                }`
-              }
-            >
-              <Icon className="w-5 h-5 mb-0.5" />
-              <span>{item.etiquetaMovil}</span>
-            </NavLink>
-          );
-        })}
-      </nav>
+      {cuentaActiva && (
+        <nav
+          className={`lg:hidden fixed bottom-0 inset-x-0 z-30 bg-white border-t border-borde grid ${
+            enlacesNavegacion.length > 4 ? 'grid-cols-5' : 'grid-cols-4'
+          }`}
+        >
+          {enlacesNavegacion.map((item) => {
+            const Icon = item.icon;
+            return (
+              <NavLink
+                key={item.to}
+                to={item.to}
+                end={item.to === '/'}
+                onClick={() => void verificarVigenciaSesion()}
+                className={({ isActive }) =>
+                  `flex flex-col items-center justify-center py-2 text-xs font-semibold ${isActive ? 'text-primario' : 'text-slate-500'
+                  }`
+                }
+              >
+                <Icon className="w-5 h-5 mb-0.5" />
+                <span>{item.etiquetaMovil}</span>
+              </NavLink>
+            );
+          })}
+        </nav>
+      )}
 
       <LogoutConfirmModal
         abierto={modalLogoutAbierto}

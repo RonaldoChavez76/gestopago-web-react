@@ -10,6 +10,7 @@ import {
   CreditCard,
   Edit3,
   ReceiptText,
+  RotateCcw,
   Search,
   ShieldAlert,
   Trash2,
@@ -124,6 +125,9 @@ export function ExecutiveDashboardPage({
   const [confirmacionBajaTexto, setConfirmacionBajaTexto] = useState('');
   const [procesandoBaja, setProcesandoBaja] = useState(false);
 
+  const [clienteParaReactivar, setClienteParaReactivar] = useState<ClientePerfil | null>(null);
+  const [procesandoReactivacion, setProcesandoReactivacion] = useState(false);
+
   const esEjecutivo = esUsuarioEjecutivo(sesionActual);
 
   const ejecutarBusquedaClientes = useCallback(
@@ -234,12 +238,26 @@ export function ExecutiveDashboardPage({
   };
 
   const abrirEdicionCliente = async (clienteId: number, respaldo?: ClientePerfil) => {
+    if (respaldo && !respaldo.activo) {
+      setErrorGlobal(
+        `El cliente #${respaldo.id} está dado de baja. Reactívalo primero antes de editar sus datos.`,
+      );
+      return;
+    }
     setModalEditarAbierto(true);
     setCargandoDetalleCliente(true);
     setClienteEnEdicion(respaldo ?? null);
     setErrorGlobal(null);
     try {
       const detalle = await clienteService.consultarPerfil(clienteId);
+      if (!detalle.activo) {
+        setModalEditarAbierto(false);
+        setClienteEnEdicion(null);
+        setErrorGlobal(
+          `El cliente #${detalle.id} está dado de baja. Reactívalo primero antes de editar sus datos.`,
+        );
+        return;
+      }
       setClienteEnEdicion(detalle);
     } catch (error) {
       setModalEditarAbierto(false);
@@ -730,14 +748,16 @@ export function ExecutiveDashboardPage({
                       </div>
 
                       <div className="flex flex-wrap items-center gap-2 shrink-0">
-                        <button
-                          type="button"
-                          onClick={() => void abrirEdicionCliente(p.id, p)}
-                          className="inline-flex items-center gap-1.5 rounded-xl border border-borde bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 cursor-pointer"
-                        >
-                          <Edit3 className="w-3.5 h-3.5 text-primario" />
-                          <span>Editar</span>
-                        </button>
+                        {p.activo && (
+                          <button
+                            type="button"
+                            onClick={() => void abrirEdicionCliente(p.id, p)}
+                            className="inline-flex items-center gap-1.5 rounded-xl border border-borde bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 cursor-pointer"
+                          >
+                            <Edit3 className="w-3.5 h-3.5 text-primario" />
+                            <span>Editar</span>
+                          </button>
+                        )}
                         <button
                           type="button"
                           onClick={() => verCuentasDeCliente(p.id)}
@@ -754,7 +774,7 @@ export function ExecutiveDashboardPage({
                           <ReceiptText className="w-3.5 h-3.5 text-primario" />
                           <span>Auditoría</span>
                         </button>
-                        {p.activo && (
+                        {p.activo ? (
                           <button
                             type="button"
                             onClick={() => {
@@ -765,6 +785,15 @@ export function ExecutiveDashboardPage({
                           >
                             <Trash2 className="w-3.5 h-3.5" />
                             <span>Dar de baja</span>
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => setClienteParaReactivar(p)}
+                            className="inline-flex items-center gap-1.5 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700 hover:bg-emerald-100 cursor-pointer"
+                          >
+                            <RotateCcw className="w-3.5 h-3.5" />
+                            <span>Reactivar</span>
                           </button>
                         )}
                       </div>
@@ -1320,6 +1349,73 @@ export function ExecutiveDashboardPage({
               >
                 <Trash2 className="w-4 h-4" />
                 <span>{procesandoBaja ? 'Aplicando baja...' : 'Aplicar Baja Lógica'}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {clienteParaReactivar && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-xs"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="titulo-reactivar-ejecutivo"
+        >
+          <div className="w-full max-w-md rounded-2xl border border-emerald-200 bg-white p-6 shadow-xl space-y-4">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
+                <RotateCcw className="w-5 h-5" />
+              </div>
+              <div>
+                <h2 id="titulo-reactivar-ejecutivo" className="text-lg font-bold text-slate-900">
+                  Confirmar Reactivación de Cliente
+                </h2>
+                <p className="text-xs sm:text-sm text-slate-600 mt-1">
+                  Se volverá a habilitar al cliente #{clienteParaReactivar.id} ({construirNombreCompleto(clienteParaReactivar)}), su acceso y cuentas bancarias inactivas.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2 pt-2">
+              <button
+                type="button"
+                disabled={procesandoReactivacion}
+                onClick={() => setClienteParaReactivar(null)}
+                className="rounded-xl border border-borde bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 cursor-pointer"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                disabled={procesandoReactivacion}
+                onClick={() => {
+                  const clienteObjetivo = clienteParaReactivar;
+                  if (!clienteObjetivo) return;
+                  void (async () => {
+                    setProcesandoReactivacion(true);
+                    setErrorGlobal(null);
+                    try {
+                      await clienteService.reactivarCliente(clienteObjetivo.id);
+                      setClienteParaReactivar(null);
+                      setAvisoGlobal(
+                        `Cliente #${clienteObjetivo.id} (${construirNombreCompleto(clienteObjetivo)}) reactivado correctamente.`,
+                      );
+                      await ejecutarBusquedaClientes(filtrosClientes);
+                    } catch (error) {
+                      setErrorGlobal(
+                        error instanceof ApiException
+                          ? error.message
+                          : 'No fue posible reactivar al cliente seleccionado.',
+                      );
+                    } finally {
+                      setProcesandoReactivacion(false);
+                    }
+                  })();
+                }}
+                className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-50 cursor-pointer"
+              >
+                <RotateCcw className="w-4 h-4" />
+                <span>{procesandoReactivacion ? 'Reactivando...' : 'Reactivar Cliente'}</span>
               </button>
             </div>
           </div>

@@ -28,6 +28,7 @@ export interface UserSession {
   sessionId?: string;
   plataforma: string;
   rol?: string;
+  cuentaActiva?: boolean;
   usuarioId?: number;
   clienteId?: number;
   nombreCliente?: string;
@@ -43,6 +44,10 @@ export function normalizarRolUsuario(value: unknown): RolUsuario {
 
 export function esUsuarioEjecutivo(session?: UserSession | null): boolean {
   return (session?.rol ?? 'CLIENTE').trim().toUpperCase() === 'EJECUTIVO';
+}
+
+export function esCuentaActiva(session?: UserSession | null): boolean {
+  return session?.cuentaActiva !== false;
 }
 
 function toStringOrUndefined(value: unknown): string | undefined {
@@ -114,6 +119,7 @@ export function parseUserSession(
     numeroCuenta: toStringOrUndefined(json.numeroCuenta),
     saldoCuenta: toNumberOrUndefined(json.saldoCuenta),
     rol: normalizarRolUsuario(json.rol),
+    cuentaActiva: typeof json.cuentaActiva === 'boolean' ? json.cuentaActiva : true,
   };
 }
 

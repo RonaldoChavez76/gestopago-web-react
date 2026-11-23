@@ -157,6 +157,10 @@ export class AuthService {
           data.rol !== undefined && data.rol !== null && String(data.rol).trim() !== ''
             ? normalizarRolUsuario(data.rol)
             : (sesionActual.rol ?? 'CLIENTE'),
+        cuentaActiva:
+          typeof data.cuentaActiva === 'boolean'
+            ? data.cuentaActiva
+            : (sesionActual.cuentaActiva ?? true),
         usuarioId: parseId(data.usuarioId, sesionActual.usuarioId),
         clienteId: parseId(data.clienteId, sesionActual.clienteId),
         saldoCuenta: Number.isNaN(saldoActualizado) ? sesionActual.saldoCuenta : saldoActualizado,
