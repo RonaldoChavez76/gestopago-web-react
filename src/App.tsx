@@ -5,6 +5,7 @@ import { SessionProvider } from './context/SessionContext';
 import { AccountOverviewPage } from './pages/AccountOverviewPage';
 import { AccountProfilePage } from './pages/AccountProfilePage';
 import { CatalogPage } from './pages/CatalogPage';
+import { ExecutiveDashboardPage } from './pages/ExecutiveDashboardPage';
 import { HistoryPage } from './pages/HistoryPage';
 import { LoginPage } from './pages/LoginPage';
 import { PurchasePage } from './pages/PurchasePage';
@@ -25,6 +26,7 @@ export function AppRoutes() {
           <Route path="/comprar" element={<PurchasePage />} />
           <Route path="/historial" element={<HistoryPage />} />
           <Route path="/perfil" element={<AccountProfilePage />} />
+          <Route path="/ejecutivo" element={<ExecutiveDashboardPage />} />
         </Route>
       </Route>
 

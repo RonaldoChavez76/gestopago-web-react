@@ -1,7 +1,8 @@
 import { Link } from 'react-router-dom';
-import { ReceiptText, ShieldCheck, Store, UserCog } from 'lucide-react';
+import { BriefcaseBusiness, ReceiptText, ShieldCheck, Store, UserCog } from 'lucide-react';
 import { formatearMonedaMxn } from '../components/AppLayout';
 import { useSession } from '../context/SessionContext';
+import { esUsuarioEjecutivo } from '../models/auth';
 
 export function AccountOverviewPage() {
   const { sesionActual } = useSession();
@@ -10,6 +11,8 @@ export function AccountOverviewPage() {
     return null;
   }
 
+  const esEjecutivo = esUsuarioEjecutivo(sesionActual);
+
   return (
     <div className="space-y-6">
       <section className="rounded-3xl bg-gradient-to-br from-primario to-primario-oscuro p-6 sm:p-8 text-white shadow-sm">
@@ -17,9 +20,18 @@ export function AccountOverviewPage() {
           <h1 className="text-2xl sm:text-3xl font-bold">
             {sesionActual.nombreCliente ?? sesionActual.correo}
           </h1>
-          <span className="inline-flex items-center self-start sm:self-auto px-3.5 py-1.5 rounded-full bg-white text-primario-oscuro text-xs font-bold shadow-xs">
-            2FA Verificado • {sesionActual.plataforma}
-          </span>
+          <div className="flex flex-wrap items-center gap-2 self-start sm:self-auto">
+            <span className="inline-flex items-center px-3.5 py-1.5 rounded-full bg-white text-primario-oscuro text-xs font-bold shadow-xs">
+              2FA Verificado • {sesionActual.plataforma}
+            </span>
+            <span
+              className={`inline-flex items-center px-3.5 py-1.5 rounded-full text-xs font-bold shadow-xs ${
+                esEjecutivo ? 'bg-amber-300 text-slate-900' : 'bg-white/20 text-white'
+              }`}
+            >
+              Rol: {esEjecutivo ? 'EJECUTIVO' : 'CLIENTE'}
+            </span>
+          </div>
         </div>
 
         <div className="mt-6">
@@ -69,6 +81,15 @@ export function AccountOverviewPage() {
             <UserCog className="w-4 h-4 text-primario" />
             <span>Editar Perfil y Cuenta</span>
           </Link>
+          {esEjecutivo && (
+            <Link
+              to="/ejecutivo"
+              className="inline-flex items-center gap-2 rounded-xl bg-amber-500 px-5 py-3 text-sm font-semibold text-white hover:bg-amber-600 transition-colors"
+            >
+              <BriefcaseBusiness className="w-4 h-4" />
+              <span>Abrir Panel Ejecutivo</span>
+            </Link>
+          )}
         </div>
       </section>
     </div>

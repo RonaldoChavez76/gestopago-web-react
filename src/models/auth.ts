@@ -18,6 +18,8 @@ export interface Login2faChallenge {
   correoDestinoEnmascarado?: string;
 }
 
+export type RolUsuario = 'CLIENTE' | 'EJECUTIVO';
+
 export interface UserSession {
   accessToken: string;
   tokenType: string;
@@ -25,12 +27,22 @@ export interface UserSession {
   expiresAt?: string;
   sessionId?: string;
   plataforma: string;
+  rol?: string;
   usuarioId?: number;
   clienteId?: number;
   nombreCliente?: string;
   correo: string;
   numeroCuenta?: string;
   saldoCuenta?: number;
+}
+
+export function normalizarRolUsuario(value: unknown): RolUsuario {
+  const limpio = typeof value === 'string' ? value.trim().toUpperCase() : '';
+  return limpio === 'EJECUTIVO' ? 'EJECUTIVO' : 'CLIENTE';
+}
+
+export function esUsuarioEjecutivo(session?: UserSession | null): boolean {
+  return (session?.rol ?? 'CLIENTE').trim().toUpperCase() === 'EJECUTIVO';
 }
 
 function toStringOrUndefined(value: unknown): string | undefined {
@@ -101,6 +113,7 @@ export function parseUserSession(
     correo: String(json.correo ?? correoFallback),
     numeroCuenta: toStringOrUndefined(json.numeroCuenta),
     saldoCuenta: toNumberOrUndefined(json.saldoCuenta),
+    rol: normalizarRolUsuario(json.rol),
   };
 }
 
