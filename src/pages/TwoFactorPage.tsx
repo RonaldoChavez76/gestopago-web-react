@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { useSession } from '../context/SessionContext';
 import { ApiException } from '../core/network/apiClient';
+import { sanitizarSoloDigitos } from '../models/cliente';
 
 function formatearTiempo(totalSegundos: number): string {
   const minutos = Math.floor(totalSegundos / 60)
@@ -198,10 +199,11 @@ export function TwoFactorPage() {
               id="codigo-otp"
               type="text"
               inputMode="numeric"
+              minLength={6}
               maxLength={6}
               placeholder="Ej. 482910"
               value={codigoOtpInput}
-              onChange={(e) => setCodigoOtpInput(e.target.value.replace(/[^0-9]/g, '').slice(0, 6))}
+              onChange={(e) => setCodigoOtpInput(sanitizarSoloDigitos(e.target.value, 6))}
               className="w-full rounded-xl border border-borde bg-white px-4 py-3 text-center text-lg font-bold tracking-[0.35em] text-slate-900 placeholder:text-sm placeholder:font-normal placeholder:tracking-normal placeholder:text-slate-400 focus:border-primario focus:outline-none focus:ring-2 focus:ring-primario/20"
             />
           </div>

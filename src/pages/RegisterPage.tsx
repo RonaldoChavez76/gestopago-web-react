@@ -17,12 +17,32 @@ import {
   type RegistroClienteForm,
   type RegistroClienteResultado,
   crearFormularioRegistroInicial,
-  validarFormularioRegistro,
+  sanitizarCalle,
+  sanitizarColonia,
+  sanitizarCurp,
+  sanitizarDecimalPositivo,
+  sanitizarLugar,
+  sanitizarNumeroDomicilio,
+  sanitizarRfc,
+  sanitizarSinEspacios,
+  sanitizarSoloDigitos,
+  sanitizarSoloLetras,
+  sanitizarTextoEmpresa,
+  sanitizarTextoOcupacion,
+  validarCamposRegistro,
 } from '../models/cliente';
 import { ClienteService } from '../services/clienteService';
 
 export interface RegisterPageProps {
   clienteServiceOverride?: ClienteService;
+}
+
+function claseInput(tieneError: boolean): string {
+  return `w-full rounded-xl border bg-white px-3.5 py-2.5 text-sm text-slate-900 focus:outline-none focus:ring-2 ${
+    tieneError
+      ? 'border-red-400 focus:border-red-500 focus:ring-red-200'
+      : 'border-borde focus:border-primario focus:ring-primario/20'
+  }`;
 }
 
 export function RegisterPage({ clienteServiceOverride }: RegisterPageProps) {
@@ -37,6 +57,7 @@ export function RegisterPage({ clienteServiceOverride }: RegisterPageProps) {
   const [form, setForm] = useState<RegistroClienteForm>(() => crearFormularioRegistroInicial());
   const [mostrarPassword, setMostrarPassword] = useState(false);
   const [cargando, setCargando] = useState(false);
+  const [erroresCampos, setErroresCampos] = useState<Record<string, string>>({});
   const [errorMensaje, setErrorMensaje] = useState<string | null>(null);
   const [registroExitoso, setRegistroExitoso] = useState<RegistroClienteResultado | null>(null);
 
@@ -44,11 +65,21 @@ export function RegisterPage({ clienteServiceOverride }: RegisterPageProps) {
     return <Navigate to="/" replace />;
   }
 
+  const limpiarErrorCampo = (clave: string) => {
+    setErroresCampos((prev) => {
+      if (!prev[clave]) return prev;
+      const copia = { ...prev };
+      delete copia[clave];
+      return copia;
+    });
+  };
+
   const actualizarCampo = <K extends keyof RegistroClienteForm>(
     campo: K,
     valor: RegistroClienteForm[K],
   ) => {
     setForm((prev) => ({ ...prev, [campo]: valor }));
+    limpiarErrorCampo(String(campo));
   };
 
   const actualizarDomicilio = (
@@ -59,18 +90,28 @@ export function RegisterPage({ clienteServiceOverride }: RegisterPageProps) {
       ...prev,
       domicilio: { ...prev.domicilio, [campo]: valor },
     }));
+    limpiarErrorCampo(`domicilio.${String(campo)}`);
+  };
+
+  const renderError = (clave: string) => {
+    const msg = erroresCampos[clave];
+    if (!msg) return null;
+    return <p className="text-[11px] font-medium text-red-600 mt-1">{msg}</p>;
   };
 
   const manejarSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setErrorMensaje(null);
 
-    const err = validarFormularioRegistro(form);
-    if (err) {
-      setErrorMensaje(err);
+    const errores = validarCamposRegistro(form);
+    const primerError = Object.values(errores)[0];
+    if (primerError) {
+      setErroresCampos(errores);
+      setErrorMensaje(primerError);
       return;
     }
 
+    setErroresCampos({});
     setCargando(true);
     try {
       const resultado = await service.registrarCliente(form);
@@ -133,8 +174,8 @@ export function RegisterPage({ clienteServiceOverride }: RegisterPageProps) {
   }
 
   return (
-    <div className="min-h-screen bg-fondo py-8 px-4">
-      <div className="max-w-3xl mx-auto space-y-5">
+    <div className="min-h-screen bg-fondo py-8 px-4 sm:px-6">
+      <div className="max-w-5xl mx-auto space-y-5">
         <div className="flex items-center justify-between gap-3">
           <Link
             to="/login"
@@ -158,7 +199,7 @@ export function RegisterPage({ clienteServiceOverride }: RegisterPageProps) {
         <form
           noValidate
           onSubmit={(e) => void manejarSubmit(e)}
-          className="bg-white rounded-2xl border border-borde p-6 shadow-xs space-y-6"
+          className="bg-white rounded-3xl border border-borde p-6 sm:p-8 shadow-xs space-y-6"
         >
           <div className="space-y-4">
             <div className="flex items-center gap-2 border-b border-borde pb-2.5">
@@ -174,10 +215,14 @@ export function RegisterPage({ clienteServiceOverride }: RegisterPageProps) {
                 <input
                   id="reg-primer-nombre"
                   type="text"
+                  minLength={2}
+                  maxLength={50}
+                  placeholder="Mínimo 2 letras"
                   value={form.primerNombre}
-                  onChange={(e) => actualizarCampo('primerNombre', e.target.value)}
-                  className="w-full rounded-xl border border-borde bg-white px-3.5 py-2.5 text-sm text-slate-900 focus:border-primario focus:outline-none focus:ring-2 focus:ring-primario/20"
+                  onChange={(e) => actualizarCampo('primerNombre', sanitizarSoloLetras(e.target.value, 50))}
+                  className={claseInput(Boolean(erroresCampos.primerNombre))}
                 />
+                {renderError('primerNombre')}
               </div>
 
               <div>
@@ -187,10 +232,13 @@ export function RegisterPage({ clienteServiceOverride }: RegisterPageProps) {
                 <input
                   id="reg-segundo-nombre"
                   type="text"
+                  maxLength={50}
+                  placeholder="Opcional (2-50 letras)"
                   value={form.segundoNombre}
-                  onChange={(e) => actualizarCampo('segundoNombre', e.target.value)}
-                  className="w-full rounded-xl border border-borde bg-white px-3.5 py-2.5 text-sm text-slate-900 focus:border-primario focus:outline-none focus:ring-2 focus:ring-primario/20"
+                  onChange={(e) => actualizarCampo('segundoNombre', sanitizarSoloLetras(e.target.value, 50))}
+                  className={claseInput(Boolean(erroresCampos.segundoNombre))}
                 />
+                {renderError('segundoNombre')}
               </div>
 
               <div>
@@ -200,10 +248,14 @@ export function RegisterPage({ clienteServiceOverride }: RegisterPageProps) {
                 <input
                   id="reg-apellido-paterno"
                   type="text"
+                  minLength={2}
+                  maxLength={50}
+                  placeholder="Mínimo 2 letras"
                   value={form.apellidoPaterno}
-                  onChange={(e) => actualizarCampo('apellidoPaterno', e.target.value)}
-                  className="w-full rounded-xl border border-borde bg-white px-3.5 py-2.5 text-sm text-slate-900 focus:border-primario focus:outline-none focus:ring-2 focus:ring-primario/20"
+                  onChange={(e) => actualizarCampo('apellidoPaterno', sanitizarSoloLetras(e.target.value, 50))}
+                  className={claseInput(Boolean(erroresCampos.apellidoPaterno))}
                 />
+                {renderError('apellidoPaterno')}
               </div>
 
               <div>
@@ -213,10 +265,14 @@ export function RegisterPage({ clienteServiceOverride }: RegisterPageProps) {
                 <input
                   id="reg-apellido-materno"
                   type="text"
+                  minLength={2}
+                  maxLength={50}
+                  placeholder="Mínimo 2 letras"
                   value={form.apellidoMaterno}
-                  onChange={(e) => actualizarCampo('apellidoMaterno', e.target.value)}
-                  className="w-full rounded-xl border border-borde bg-white px-3.5 py-2.5 text-sm text-slate-900 focus:border-primario focus:outline-none focus:ring-2 focus:ring-primario/20"
+                  onChange={(e) => actualizarCampo('apellidoMaterno', sanitizarSoloLetras(e.target.value, 50))}
+                  className={claseInput(Boolean(erroresCampos.apellidoMaterno))}
                 />
+                {renderError('apellidoMaterno')}
               </div>
 
               <div>
@@ -226,11 +282,14 @@ export function RegisterPage({ clienteServiceOverride }: RegisterPageProps) {
                 <input
                   id="reg-curp"
                   type="text"
+                  minLength={18}
                   maxLength={18}
+                  placeholder="18 caracteres sin espacios"
                   value={form.curp}
-                  onChange={(e) => actualizarCampo('curp', e.target.value.toUpperCase())}
-                  className="w-full rounded-xl border border-borde bg-white px-3.5 py-2.5 text-sm uppercase text-slate-900 focus:border-primario focus:outline-none focus:ring-2 focus:ring-primario/20"
+                  onChange={(e) => actualizarCampo('curp', sanitizarCurp(e.target.value))}
+                  className={`${claseInput(Boolean(erroresCampos.curp))} uppercase`}
                 />
+                {renderError('curp')}
               </div>
 
               <div>
@@ -240,11 +299,14 @@ export function RegisterPage({ clienteServiceOverride }: RegisterPageProps) {
                 <input
                   id="reg-rfc"
                   type="text"
+                  minLength={12}
                   maxLength={13}
+                  placeholder="12-13 caracteres con homoclave"
                   value={form.rfc}
-                  onChange={(e) => actualizarCampo('rfc', e.target.value.toUpperCase())}
-                  className="w-full rounded-xl border border-borde bg-white px-3.5 py-2.5 text-sm uppercase text-slate-900 focus:border-primario focus:outline-none focus:ring-2 focus:ring-primario/20"
+                  onChange={(e) => actualizarCampo('rfc', sanitizarRfc(e.target.value))}
+                  className={`${claseInput(Boolean(erroresCampos.rfc))} uppercase`}
                 />
+                {renderError('rfc')}
               </div>
 
               <div>
@@ -256,8 +318,9 @@ export function RegisterPage({ clienteServiceOverride }: RegisterPageProps) {
                   type="date"
                   value={form.fechaNacimiento}
                   onChange={(e) => actualizarCampo('fechaNacimiento', e.target.value)}
-                  className="w-full rounded-xl border border-borde bg-white px-3.5 py-2.5 text-sm text-slate-900 focus:border-primario focus:outline-none focus:ring-2 focus:ring-primario/20"
+                  className={claseInput(Boolean(erroresCampos.fechaNacimiento))}
                 />
+                {renderError('fechaNacimiento')}
               </div>
 
               <div>
@@ -268,12 +331,13 @@ export function RegisterPage({ clienteServiceOverride }: RegisterPageProps) {
                   id="reg-sexo"
                   value={form.sexo}
                   onChange={(e) => actualizarCampo('sexo', e.target.value)}
-                  className="w-full rounded-xl border border-borde bg-white px-3.5 py-2.5 text-sm text-slate-900 focus:border-primario focus:outline-none focus:ring-2 focus:ring-primario/20"
+                  className={claseInput(Boolean(erroresCampos.sexo))}
                 >
                   <option value="MASCULINO">MASCULINO</option>
                   <option value="FEMENINO">FEMENINO</option>
                   <option value="OTRO">OTRO</option>
                 </select>
+                {renderError('sexo')}
               </div>
 
               <div>
@@ -284,7 +348,7 @@ export function RegisterPage({ clienteServiceOverride }: RegisterPageProps) {
                   id="reg-estado-civil"
                   value={form.estadoCivil}
                   onChange={(e) => actualizarCampo('estadoCivil', e.target.value)}
-                  className="w-full rounded-xl border border-borde bg-white px-3.5 py-2.5 text-sm text-slate-900 focus:border-primario focus:outline-none focus:ring-2 focus:ring-primario/20"
+                  className={claseInput(Boolean(erroresCampos.estadoCivil))}
                 >
                   <option value="Soltero">Soltero</option>
                   <option value="Soltera">Soltera</option>
@@ -294,6 +358,7 @@ export function RegisterPage({ clienteServiceOverride }: RegisterPageProps) {
                   <option value="Viudo">Viudo</option>
                   <option value="Union libre">Unión libre</option>
                 </select>
+                {renderError('estadoCivil')}
               </div>
 
               <div>
@@ -303,10 +368,13 @@ export function RegisterPage({ clienteServiceOverride }: RegisterPageProps) {
                 <input
                   id="reg-nacionalidad"
                   type="text"
+                  minLength={3}
+                  maxLength={40}
                   value={form.nacionalidad}
-                  onChange={(e) => actualizarCampo('nacionalidad', e.target.value)}
-                  className="w-full rounded-xl border border-borde bg-white px-3.5 py-2.5 text-sm text-slate-900 focus:border-primario focus:outline-none focus:ring-2 focus:ring-primario/20"
+                  onChange={(e) => actualizarCampo('nacionalidad', sanitizarSoloLetras(e.target.value, 40))}
+                  className={claseInput(Boolean(erroresCampos.nacionalidad))}
                 />
+                {renderError('nacionalidad')}
               </div>
 
               <div className="sm:col-span-2">
@@ -316,11 +384,14 @@ export function RegisterPage({ clienteServiceOverride }: RegisterPageProps) {
                 <input
                   id="reg-correo"
                   type="email"
+                  minLength={6}
+                  maxLength={100}
                   placeholder="correo@ejemplo.com"
                   value={form.correo}
-                  onChange={(e) => actualizarCampo('correo', e.target.value)}
-                  className="w-full rounded-xl border border-borde bg-white px-3.5 py-2.5 text-sm text-slate-900 focus:border-primario focus:outline-none focus:ring-2 focus:ring-primario/20"
+                  onChange={(e) => actualizarCampo('correo', sanitizarSinEspacios(e.target.value, 100))}
+                  className={claseInput(Boolean(erroresCampos.correo))}
                 />
+                {renderError('correo')}
               </div>
 
               <div>
@@ -330,11 +401,15 @@ export function RegisterPage({ clienteServiceOverride }: RegisterPageProps) {
                 <input
                   id="reg-tel-movil"
                   type="tel"
+                  inputMode="numeric"
+                  minLength={10}
                   maxLength={10}
+                  placeholder="10 dígitos numéricos"
                   value={form.telefonoMovil}
-                  onChange={(e) => actualizarCampo('telefonoMovil', e.target.value.replace(/[^0-9]/g, ''))}
-                  className="w-full rounded-xl border border-borde bg-white px-3.5 py-2.5 text-sm text-slate-900 focus:border-primario focus:outline-none focus:ring-2 focus:ring-primario/20"
+                  onChange={(e) => actualizarCampo('telefonoMovil', sanitizarSoloDigitos(e.target.value, 10))}
+                  className={claseInput(Boolean(erroresCampos.telefonoMovil))}
                 />
+                {renderError('telefonoMovil')}
               </div>
 
               <div>
@@ -344,13 +419,16 @@ export function RegisterPage({ clienteServiceOverride }: RegisterPageProps) {
                 <input
                   id="reg-tel-alt"
                   type="tel"
+                  inputMode="numeric"
                   maxLength={10}
+                  placeholder="Opcional (10 dígitos)"
                   value={form.telefonoAlternativo}
                   onChange={(e) =>
-                    actualizarCampo('telefonoAlternativo', e.target.value.replace(/[^0-9]/g, ''))
+                    actualizarCampo('telefonoAlternativo', sanitizarSoloDigitos(e.target.value, 10))
                   }
-                  className="w-full rounded-xl border border-borde bg-white px-3.5 py-2.5 text-sm text-slate-900 focus:border-primario focus:outline-none focus:ring-2 focus:ring-primario/20"
+                  className={claseInput(Boolean(erroresCampos.telefonoAlternativo))}
                 />
+                {renderError('telefonoAlternativo')}
               </div>
 
               <div>
@@ -360,10 +438,14 @@ export function RegisterPage({ clienteServiceOverride }: RegisterPageProps) {
                 <input
                   id="reg-ocupacion"
                   type="text"
+                  minLength={3}
+                  maxLength={80}
+                  placeholder="Mínimo 3 caracteres"
                   value={form.ocupacion}
-                  onChange={(e) => actualizarCampo('ocupacion', e.target.value)}
-                  className="w-full rounded-xl border border-borde bg-white px-3.5 py-2.5 text-sm text-slate-900 focus:border-primario focus:outline-none focus:ring-2 focus:ring-primario/20"
+                  onChange={(e) => actualizarCampo('ocupacion', sanitizarTextoOcupacion(e.target.value))}
+                  className={claseInput(Boolean(erroresCampos.ocupacion))}
                 />
+                {renderError('ocupacion')}
               </div>
 
               <div>
@@ -373,10 +455,14 @@ export function RegisterPage({ clienteServiceOverride }: RegisterPageProps) {
                 <input
                   id="reg-empresa"
                   type="text"
+                  minLength={2}
+                  maxLength={100}
+                  placeholder="Mínimo 2 caracteres"
                   value={form.empresa}
-                  onChange={(e) => actualizarCampo('empresa', e.target.value)}
-                  className="w-full rounded-xl border border-borde bg-white px-3.5 py-2.5 text-sm text-slate-900 focus:border-primario focus:outline-none focus:ring-2 focus:ring-primario/20"
+                  onChange={(e) => actualizarCampo('empresa', sanitizarTextoEmpresa(e.target.value))}
+                  className={claseInput(Boolean(erroresCampos.empresa))}
                 />
+                {renderError('empresa')}
               </div>
 
               <div>
@@ -385,12 +471,16 @@ export function RegisterPage({ clienteServiceOverride }: RegisterPageProps) {
                 </label>
                 <input
                   id="reg-ingreso"
-                  type="number"
-                  step="0.01"
+                  type="text"
+                  inputMode="decimal"
+                  placeholder="Ej. 20000.00"
                   value={form.ingresoMensual}
-                  onChange={(e) => actualizarCampo('ingresoMensual', e.target.value)}
-                  className="w-full rounded-xl border border-borde bg-white px-3.5 py-2.5 text-sm text-slate-900 focus:border-primario focus:outline-none focus:ring-2 focus:ring-primario/20"
+                  onChange={(e) =>
+                    actualizarCampo('ingresoMensual', sanitizarDecimalPositivo(e.target.value))
+                  }
+                  className={claseInput(Boolean(erroresCampos.ingresoMensual))}
                 />
+                {renderError('ingresoMensual')}
               </div>
             </div>
           </div>
@@ -409,10 +499,14 @@ export function RegisterPage({ clienteServiceOverride }: RegisterPageProps) {
                 <input
                   id="reg-calle"
                   type="text"
+                  minLength={3}
+                  maxLength={100}
+                  placeholder="Mínimo 3 caracteres"
                   value={form.domicilio.calle}
-                  onChange={(e) => actualizarDomicilio('calle', e.target.value)}
-                  className="w-full rounded-xl border border-borde bg-white px-3.5 py-2.5 text-sm text-slate-900 focus:border-primario focus:outline-none focus:ring-2 focus:ring-primario/20"
+                  onChange={(e) => actualizarDomicilio('calle', sanitizarCalle(e.target.value))}
+                  className={claseInput(Boolean(erroresCampos['domicilio.calle']))}
                 />
+                {renderError('domicilio.calle')}
               </div>
 
               <div>
@@ -422,10 +516,16 @@ export function RegisterPage({ clienteServiceOverride }: RegisterPageProps) {
                 <input
                   id="reg-num-ext"
                   type="text"
+                  minLength={1}
+                  maxLength={20}
+                  placeholder="Sin espacios (ej. 120-A)"
                   value={form.domicilio.numeroExterior}
-                  onChange={(e) => actualizarDomicilio('numeroExterior', e.target.value)}
-                  className="w-full rounded-xl border border-borde bg-white px-3.5 py-2.5 text-sm text-slate-900 focus:border-primario focus:outline-none focus:ring-2 focus:ring-primario/20"
+                  onChange={(e) =>
+                    actualizarDomicilio('numeroExterior', sanitizarNumeroDomicilio(e.target.value))
+                  }
+                  className={claseInput(Boolean(erroresCampos['domicilio.numeroExterior']))}
                 />
+                {renderError('domicilio.numeroExterior')}
               </div>
 
               <div>
@@ -435,10 +535,15 @@ export function RegisterPage({ clienteServiceOverride }: RegisterPageProps) {
                 <input
                   id="reg-num-int"
                   type="text"
+                  maxLength={20}
+                  placeholder="Opcional sin espacios"
                   value={form.domicilio.numeroInterior}
-                  onChange={(e) => actualizarDomicilio('numeroInterior', e.target.value)}
-                  className="w-full rounded-xl border border-borde bg-white px-3.5 py-2.5 text-sm text-slate-900 focus:border-primario focus:outline-none focus:ring-2 focus:ring-primario/20"
+                  onChange={(e) =>
+                    actualizarDomicilio('numeroInterior', sanitizarNumeroDomicilio(e.target.value))
+                  }
+                  className={claseInput(Boolean(erroresCampos['domicilio.numeroInterior']))}
                 />
+                {renderError('domicilio.numeroInterior')}
               </div>
 
               <div>
@@ -448,10 +553,14 @@ export function RegisterPage({ clienteServiceOverride }: RegisterPageProps) {
                 <input
                   id="reg-colonia"
                   type="text"
+                  minLength={3}
+                  maxLength={80}
+                  placeholder="Mínimo 3 caracteres"
                   value={form.domicilio.colonia}
-                  onChange={(e) => actualizarDomicilio('colonia', e.target.value)}
-                  className="w-full rounded-xl border border-borde bg-white px-3.5 py-2.5 text-sm text-slate-900 focus:border-primario focus:outline-none focus:ring-2 focus:ring-primario/20"
+                  onChange={(e) => actualizarDomicilio('colonia', sanitizarColonia(e.target.value))}
+                  className={claseInput(Boolean(erroresCampos['domicilio.colonia']))}
                 />
+                {renderError('domicilio.colonia')}
               </div>
 
               <div>
@@ -461,10 +570,14 @@ export function RegisterPage({ clienteServiceOverride }: RegisterPageProps) {
                 <input
                   id="reg-municipio"
                   type="text"
+                  minLength={3}
+                  maxLength={80}
+                  placeholder="Solo letras (mín. 3)"
                   value={form.domicilio.municipio}
-                  onChange={(e) => actualizarDomicilio('municipio', e.target.value)}
-                  className="w-full rounded-xl border border-borde bg-white px-3.5 py-2.5 text-sm text-slate-900 focus:border-primario focus:outline-none focus:ring-2 focus:ring-primario/20"
+                  onChange={(e) => actualizarDomicilio('municipio', sanitizarLugar(e.target.value, 80))}
+                  className={claseInput(Boolean(erroresCampos['domicilio.municipio']))}
                 />
+                {renderError('domicilio.municipio')}
               </div>
 
               <div>
@@ -474,10 +587,14 @@ export function RegisterPage({ clienteServiceOverride }: RegisterPageProps) {
                 <input
                   id="reg-estado"
                   type="text"
+                  minLength={2}
+                  maxLength={60}
+                  placeholder="Solo letras (mín. 2)"
                   value={form.domicilio.estado}
-                  onChange={(e) => actualizarDomicilio('estado', e.target.value)}
-                  className="w-full rounded-xl border border-borde bg-white px-3.5 py-2.5 text-sm text-slate-900 focus:border-primario focus:outline-none focus:ring-2 focus:ring-primario/20"
+                  onChange={(e) => actualizarDomicilio('estado', sanitizarLugar(e.target.value, 60))}
+                  className={claseInput(Boolean(erroresCampos['domicilio.estado']))}
                 />
+                {renderError('domicilio.estado')}
               </div>
 
               <div className="grid grid-cols-2 gap-3">
@@ -488,13 +605,17 @@ export function RegisterPage({ clienteServiceOverride }: RegisterPageProps) {
                   <input
                     id="reg-cp"
                     type="text"
+                    inputMode="numeric"
+                    minLength={5}
                     maxLength={5}
+                    placeholder="5 dígitos"
                     value={form.domicilio.codigoPostal}
                     onChange={(e) =>
-                      actualizarDomicilio('codigoPostal', e.target.value.replace(/[^0-9]/g, ''))
+                      actualizarDomicilio('codigoPostal', sanitizarSoloDigitos(e.target.value, 5))
                     }
-                    className="w-full rounded-xl border border-borde bg-white px-3 py-2.5 text-sm text-slate-900 focus:border-primario focus:outline-none focus:ring-2 focus:ring-primario/20"
+                    className={claseInput(Boolean(erroresCampos['domicilio.codigoPostal']))}
                   />
+                  {renderError('domicilio.codigoPostal')}
                 </div>
 
                 <div>
@@ -504,10 +625,13 @@ export function RegisterPage({ clienteServiceOverride }: RegisterPageProps) {
                   <input
                     id="reg-pais"
                     type="text"
+                    minLength={3}
+                    maxLength={50}
                     value={form.domicilio.pais}
-                    onChange={(e) => actualizarDomicilio('pais', e.target.value)}
-                    className="w-full rounded-xl border border-borde bg-white px-3 py-2.5 text-sm text-slate-900 focus:border-primario focus:outline-none focus:ring-2 focus:ring-primario/20"
+                    onChange={(e) => actualizarDomicilio('pais', sanitizarSoloLetras(e.target.value, 50))}
+                    className={claseInput(Boolean(erroresCampos['domicilio.pais']))}
                   />
+                  {renderError('domicilio.pais')}
                 </div>
               </div>
             </div>
@@ -528,9 +652,11 @@ export function RegisterPage({ clienteServiceOverride }: RegisterPageProps) {
                   <input
                     id="reg-password"
                     type={mostrarPassword ? 'text' : 'password'}
+                    minLength={8}
+                    maxLength={72}
                     value={form.password}
-                    onChange={(e) => actualizarCampo('password', e.target.value)}
-                    className="w-full rounded-xl border border-borde bg-white px-3.5 pr-10 py-2.5 text-sm text-slate-900 focus:border-primario focus:outline-none focus:ring-2 focus:ring-primario/20"
+                    onChange={(e) => actualizarCampo('password', sanitizarSinEspacios(e.target.value, 72))}
+                    className={`${claseInput(Boolean(erroresCampos.password))} pr-10`}
                   />
                   <button
                     type="button"
@@ -542,8 +668,9 @@ export function RegisterPage({ clienteServiceOverride }: RegisterPageProps) {
                   </button>
                 </div>
                 <p className="text-[11px] text-slate-500 mt-1">
-                  Mínimo 8 caracteres con mayúscula, minúscula, número y símbolo.
+                  8 a 72 caracteres sin espacios con mayúscula, minúscula, número y símbolo.
                 </p>
+                {renderError('password')}
               </div>
 
               <div>
@@ -553,10 +680,15 @@ export function RegisterPage({ clienteServiceOverride }: RegisterPageProps) {
                 <input
                   id="reg-confirmar-password"
                   type={mostrarPassword ? 'text' : 'password'}
+                  minLength={8}
+                  maxLength={72}
                   value={form.confirmarPassword}
-                  onChange={(e) => actualizarCampo('confirmarPassword', e.target.value)}
-                  className="w-full rounded-xl border border-borde bg-white px-3.5 py-2.5 text-sm text-slate-900 focus:border-primario focus:outline-none focus:ring-2 focus:ring-primario/20"
+                  onChange={(e) =>
+                    actualizarCampo('confirmarPassword', sanitizarSinEspacios(e.target.value, 72))
+                  }
+                  className={claseInput(Boolean(erroresCampos.confirmarPassword))}
                 />
+                {renderError('confirmarPassword')}
               </div>
             </div>
           </div>

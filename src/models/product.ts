@@ -1,3 +1,6 @@
+export const GESTOPAGO_LOGO_BASE_URL =
+  'https://gestopago.portalventas.net/sistema/images/gestopago/servicios';
+
 export type ProductCategory =
   | 'Recargas Telefónicas'
   | 'Pago de Servicios'
@@ -15,6 +18,14 @@ export interface CatalogProduct {
   descripcion: string;
   tipoReferencia?: string;
   esRecarga: boolean;
+  logoUrl?: string;
+}
+
+export function construirLogoUrlGestoPago(idServicio: number): string | undefined {
+  if (!Number.isFinite(idServicio) || idServicio <= 0) {
+    return undefined;
+  }
+  return `${GESTOPAGO_LOGO_BASE_URL}/${idServicio}.png`;
 }
 
 function inferirMarcaServicio(nombre: string): string {
@@ -151,6 +162,10 @@ export function parseCatalogProduct(json: Record<string, unknown>): CatalogProdu
     legend.length > 0 ? legend : construirDescripcion(nombre, servicio, categoria, precio);
 
   const esRecarga = tipoFront === '1' || categoria === 'Recargas Telefónicas';
+  const rawLogoUrl =
+    typeof json.logoUrl === 'string' && json.logoUrl.trim().length > 0
+      ? json.logoUrl.trim()
+      : construirLogoUrlGestoPago(idServicio);
 
   return {
     idProducto,
@@ -167,5 +182,6 @@ export function parseCatalogProduct(json: Record<string, unknown>): CatalogProdu
         ? String(json.tipoReferencia)
         : undefined,
     esRecarga,
+    logoUrl: rawLogoUrl,
   };
 }

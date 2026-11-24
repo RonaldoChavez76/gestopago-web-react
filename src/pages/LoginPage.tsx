@@ -27,6 +27,7 @@ import { SessionConflictModal } from '../components/SessionConflictModal';
 import { useSession } from '../context/SessionContext';
 import { ApiException } from '../core/network/apiClient';
 import type { ConflictoSesion } from '../models/auth';
+import { REGEX_EMAIL, sanitizarSinEspacios } from '../models/cliente';
 
 export function LoginPage() {
   const navigate = useNavigate();
@@ -66,8 +67,8 @@ export function LoginPage() {
     if (correoLimpio.length === 0) {
       return 'Ingresa tu correo electrónico.';
     }
-    if (!correoLimpio.includes('@') || !correoLimpio.includes('.')) {
-      return 'Ingresa un correo electrónico válido.';
+    if (correoLimpio.length < 6 || correoLimpio.length > 100 || !REGEX_EMAIL.test(correoLimpio)) {
+      return 'Ingresa un correo electrónico válido sin espacios.';
     }
     if (password.length === 0) {
       return 'Ingresa tu contraseña.';
@@ -204,9 +205,10 @@ export function LoginPage() {
                 id="correo"
                 type="email"
                 autoComplete="email"
+                maxLength={100}
                 placeholder="correo@ejemplo.com"
                 value={correo}
-                onChange={(e) => setCorreo(e.target.value)}
+                onChange={(e) => setCorreo(sanitizarSinEspacios(e.target.value, 100))}
                 className="w-full rounded-xl border border-borde bg-white pl-10 pr-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-primario focus:outline-none focus:ring-2 focus:ring-primario/20"
               />
             </div>

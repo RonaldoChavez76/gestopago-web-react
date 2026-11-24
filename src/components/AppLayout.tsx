@@ -78,7 +78,7 @@ export function AppLayout() {
 
   return (
     <div className="min-h-screen bg-fondo text-slate-900 flex flex-col lg:flex-row">
-      <aside className="hidden lg:flex lg:w-64 lg:flex-col lg:fixed lg:inset-y-0 bg-white border-r border-borde">
+      <aside className="hidden lg:flex lg:w-72 lg:flex-col lg:fixed lg:inset-y-0 bg-white border-r border-borde">
         <div className="flex items-center gap-3 px-5 h-16 border-b border-borde">
           <div className="w-9 h-9 rounded-xl bg-primario flex items-center justify-center text-white">
             <Wallet className="w-5 h-5" />
@@ -133,9 +133,9 @@ export function AppLayout() {
         </div>
       </aside>
 
-      <div className="flex-1 flex flex-col lg:pl-64 pb-16 lg:pb-0">
+      <div className="flex-1 flex flex-col lg:pl-72 pb-16 lg:pb-0">
         <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-xs border-b border-borde">
-          <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-3">
+          <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-3">
             <div className="flex items-center gap-2.5 min-w-0">
               <Globe className="w-5 h-5 text-primario lg:hidden shrink-0" />
               <span className="font-bold text-slate-900 text-sm sm:text-base truncate">
@@ -181,7 +181,7 @@ export function AppLayout() {
 
           {avisoVigencia && (
             <div className="bg-emerald-50 border-t border-emerald-200 px-4 py-2">
-              <div className="max-w-6xl mx-auto flex items-center gap-2 text-xs sm:text-sm font-medium text-emerald-800">
+              <div className="max-w-[1440px] mx-auto flex items-center gap-2 text-xs sm:text-sm font-medium text-emerald-800">
                 <CheckCircle2 className="w-4 h-4 shrink-0" />
                 <span>{avisoVigencia}</span>
               </div>
@@ -189,7 +189,7 @@ export function AppLayout() {
           )}
         </header>
 
-        <main className="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 py-6">
+        <main className="flex-1 max-w-[1440px] w-full mx-auto px-4 sm:px-6 lg:px-8 py-7">
           {cuentaActiva ? <Outlet /> : <InactiveAccountGate />}
         </main>
       </div>

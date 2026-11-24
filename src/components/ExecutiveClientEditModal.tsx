@@ -5,7 +5,17 @@ import { ApiException } from '../core/network/apiClient';
 import {
   type ClientePerfil,
   type DomicilioPerfil,
-  validarDatosClienteBase,
+  sanitizarCalle,
+  sanitizarColonia,
+  sanitizarDecimalPositivo,
+  sanitizarLugar,
+  sanitizarNumeroDomicilio,
+  sanitizarSinEspacios,
+  sanitizarSoloDigitos,
+  sanitizarSoloLetras,
+  sanitizarTextoEmpresa,
+  sanitizarTextoOcupacion,
+  validarCamposClienteBase,
 } from '../models/cliente';
 import { ClienteService } from '../services/clienteService';
 
@@ -18,8 +28,13 @@ export interface ExecutiveClientEditModalProps {
   clienteServiceOverride?: ClienteService;
 }
 
-const INPUT_CLASS =
-  'w-full rounded-xl border border-borde bg-white px-3 py-2 text-sm text-slate-900 focus:border-primario focus:outline-none focus:ring-2 focus:ring-primario/20';
+function claseInput(tieneError: boolean): string {
+  return `w-full rounded-xl border bg-white px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 ${
+    tieneError
+      ? 'border-red-400 focus:border-red-500 focus:ring-red-200'
+      : 'border-borde focus:border-primario focus:ring-primario/20'
+  }`;
+}
 
 export function ExecutiveClientEditModal({
   abierto,
@@ -37,10 +52,12 @@ export function ExecutiveClientEditModal({
 
   const [form, setForm] = useState<ClientePerfil | null>(cliente);
   const [guardando, setGuardando] = useState(false);
+  const [erroresCampos, setErroresCampos] = useState<Record<string, string>>({});
   const [errorMensaje, setErrorMensaje] = useState<string | null>(null);
 
   useEffect(() => {
     setForm(cliente);
+    setErroresCampos({});
     setErrorMensaje(null);
   }, [cliente, abierto]);
 
@@ -48,11 +65,21 @@ export function ExecutiveClientEditModal({
     return null;
   }
 
+  const limpiarErrorCampo = (clave: string) => {
+    setErroresCampos((prev) => {
+      if (!prev[clave]) return prev;
+      const copia = { ...prev };
+      delete copia[clave];
+      return copia;
+    });
+  };
+
   const actualizarCampo = <K extends keyof Omit<ClientePerfil, 'domicilio' | 'id' | 'activo' | 'curp' | 'rfc'>>(
     campo: K,
     valor: ClientePerfil[K],
   ) => {
     setForm((prev) => (prev ? { ...prev, [campo]: valor } : prev));
+    limpiarErrorCampo(String(campo));
   };
 
   const actualizarDomicilio = <K extends keyof DomicilioPerfil>(
@@ -67,18 +94,28 @@ export function ExecutiveClientEditModal({
           }
         : prev,
     );
+    limpiarErrorCampo(`domicilio.${String(campo)}`);
+  };
+
+  const renderError = (clave: string) => {
+    const msg = erroresCampos[clave];
+    if (!msg) return null;
+    return <p className="text-[11px] font-medium text-red-600 mt-1">{msg}</p>;
   };
 
   const manejarGuardar = async (event: FormEvent) => {
     event.preventDefault();
     if (!form) return;
 
-    const err = validarDatosClienteBase(form);
-    if (err) {
-      setErrorMensaje(err);
+    const errores = validarCamposClienteBase(form);
+    const primerError = Object.values(errores)[0];
+    if (primerError) {
+      setErroresCampos(errores);
+      setErrorMensaje(primerError);
       return;
     }
 
+    setErroresCampos({});
     setGuardando(true);
     setErrorMensaje(null);
     try {
@@ -102,7 +139,7 @@ export function ExecutiveClientEditModal({
       aria-modal="true"
       aria-labelledby="titulo-editar-cliente-ejecutivo"
     >
-      <div className="w-full max-w-3xl rounded-2xl border border-borde bg-white p-5 sm:p-6 shadow-xl my-8 max-h-[90vh] overflow-y-auto space-y-5">
+      <div className="w-full max-w-4xl rounded-2xl border border-borde bg-white p-5 sm:p-6 shadow-xl my-8 max-h-[90vh] overflow-y-auto space-y-5">
         <div className="flex items-start justify-between gap-3 border-b border-borde pb-3">
           <div>
             <h2 id="titulo-editar-cliente-ejecutivo" className="text-lg font-bold text-slate-900">
@@ -166,10 +203,13 @@ export function ExecutiveClientEditModal({
                   <input
                     id="ej-edit-primer-nombre"
                     type="text"
+                    minLength={2}
+                    maxLength={50}
                     value={form.primerNombre}
-                    onChange={(e) => actualizarCampo('primerNombre', e.target.value)}
-                    className={INPUT_CLASS}
+                    onChange={(e) => actualizarCampo('primerNombre', sanitizarSoloLetras(e.target.value, 50))}
+                    className={claseInput(Boolean(erroresCampos.primerNombre))}
                   />
+                  {renderError('primerNombre')}
                 </div>
                 <div>
                   <label htmlFor="ej-edit-segundo-nombre" className="block text-xs font-semibold text-slate-700 mb-1">
@@ -178,10 +218,12 @@ export function ExecutiveClientEditModal({
                   <input
                     id="ej-edit-segundo-nombre"
                     type="text"
+                    maxLength={50}
                     value={form.segundoNombre}
-                    onChange={(e) => actualizarCampo('segundoNombre', e.target.value)}
-                    className={INPUT_CLASS}
+                    onChange={(e) => actualizarCampo('segundoNombre', sanitizarSoloLetras(e.target.value, 50))}
+                    className={claseInput(Boolean(erroresCampos.segundoNombre))}
                   />
+                  {renderError('segundoNombre')}
                 </div>
                 <div>
                   <label htmlFor="ej-edit-apellido-paterno" className="block text-xs font-semibold text-slate-700 mb-1">
@@ -190,10 +232,15 @@ export function ExecutiveClientEditModal({
                   <input
                     id="ej-edit-apellido-paterno"
                     type="text"
+                    minLength={2}
+                    maxLength={50}
                     value={form.apellidoPaterno}
-                    onChange={(e) => actualizarCampo('apellidoPaterno', e.target.value)}
-                    className={INPUT_CLASS}
+                    onChange={(e) =>
+                      actualizarCampo('apellidoPaterno', sanitizarSoloLetras(e.target.value, 50))
+                    }
+                    className={claseInput(Boolean(erroresCampos.apellidoPaterno))}
                   />
+                  {renderError('apellidoPaterno')}
                 </div>
                 <div>
                   <label htmlFor="ej-edit-apellido-materno" className="block text-xs font-semibold text-slate-700 mb-1">
@@ -202,10 +249,15 @@ export function ExecutiveClientEditModal({
                   <input
                     id="ej-edit-apellido-materno"
                     type="text"
+                    minLength={2}
+                    maxLength={50}
                     value={form.apellidoMaterno}
-                    onChange={(e) => actualizarCampo('apellidoMaterno', e.target.value)}
-                    className={INPUT_CLASS}
+                    onChange={(e) =>
+                      actualizarCampo('apellidoMaterno', sanitizarSoloLetras(e.target.value, 50))
+                    }
+                    className={claseInput(Boolean(erroresCampos.apellidoMaterno))}
                   />
+                  {renderError('apellidoMaterno')}
                 </div>
                 <div>
                   <label htmlFor="ej-edit-correo" className="block text-xs font-semibold text-slate-700 mb-1">
@@ -214,10 +266,13 @@ export function ExecutiveClientEditModal({
                   <input
                     id="ej-edit-correo"
                     type="email"
+                    minLength={6}
+                    maxLength={100}
                     value={form.correo}
-                    onChange={(e) => actualizarCampo('correo', e.target.value)}
-                    className={INPUT_CLASS}
+                    onChange={(e) => actualizarCampo('correo', sanitizarSinEspacios(e.target.value, 100))}
+                    className={claseInput(Boolean(erroresCampos.correo))}
                   />
+                  {renderError('correo')}
                 </div>
                 <div>
                   <label htmlFor="ej-edit-telefono" className="block text-xs font-semibold text-slate-700 mb-1">
@@ -226,13 +281,16 @@ export function ExecutiveClientEditModal({
                   <input
                     id="ej-edit-telefono"
                     type="tel"
+                    inputMode="numeric"
+                    minLength={10}
                     maxLength={10}
                     value={form.telefonoMovil}
                     onChange={(e) =>
-                      actualizarCampo('telefonoMovil', e.target.value.replace(/[^0-9]/g, ''))
+                      actualizarCampo('telefonoMovil', sanitizarSoloDigitos(e.target.value, 10))
                     }
-                    className={INPUT_CLASS}
+                    className={claseInput(Boolean(erroresCampos.telefonoMovil))}
                   />
+                  {renderError('telefonoMovil')}
                 </div>
                 <div>
                   <label htmlFor="ej-edit-telefono-alt" className="block text-xs font-semibold text-slate-700 mb-1">
@@ -241,13 +299,15 @@ export function ExecutiveClientEditModal({
                   <input
                     id="ej-edit-telefono-alt"
                     type="tel"
+                    inputMode="numeric"
                     maxLength={10}
                     value={form.telefonoAlternativo}
                     onChange={(e) =>
-                      actualizarCampo('telefonoAlternativo', e.target.value.replace(/[^0-9]/g, ''))
+                      actualizarCampo('telefonoAlternativo', sanitizarSoloDigitos(e.target.value, 10))
                     }
-                    className={INPUT_CLASS}
+                    className={claseInput(Boolean(erroresCampos.telefonoAlternativo))}
                   />
+                  {renderError('telefonoAlternativo')}
                 </div>
                 <div>
                   <label htmlFor="ej-edit-nacimiento" className="block text-xs font-semibold text-slate-700 mb-1">
@@ -258,8 +318,9 @@ export function ExecutiveClientEditModal({
                     type="date"
                     value={form.fechaNacimiento}
                     onChange={(e) => actualizarCampo('fechaNacimiento', e.target.value)}
-                    className={INPUT_CLASS}
+                    className={claseInput(Boolean(erroresCampos.fechaNacimiento))}
                   />
+                  {renderError('fechaNacimiento')}
                 </div>
                 <div>
                   <label htmlFor="ej-edit-sexo" className="block text-xs font-semibold text-slate-700 mb-1">
@@ -268,10 +329,12 @@ export function ExecutiveClientEditModal({
                   <input
                     id="ej-edit-sexo"
                     type="text"
+                    maxLength={20}
                     value={form.sexo}
-                    onChange={(e) => actualizarCampo('sexo', e.target.value)}
-                    className={INPUT_CLASS}
+                    onChange={(e) => actualizarCampo('sexo', sanitizarSoloLetras(e.target.value, 20))}
+                    className={claseInput(Boolean(erroresCampos.sexo))}
                   />
+                  {renderError('sexo')}
                 </div>
                 <div>
                   <label htmlFor="ej-edit-nacionalidad" className="block text-xs font-semibold text-slate-700 mb-1">
@@ -280,10 +343,13 @@ export function ExecutiveClientEditModal({
                   <input
                     id="ej-edit-nacionalidad"
                     type="text"
+                    minLength={3}
+                    maxLength={40}
                     value={form.nacionalidad}
-                    onChange={(e) => actualizarCampo('nacionalidad', e.target.value)}
-                    className={INPUT_CLASS}
+                    onChange={(e) => actualizarCampo('nacionalidad', sanitizarSoloLetras(e.target.value, 40))}
+                    className={claseInput(Boolean(erroresCampos.nacionalidad))}
                   />
+                  {renderError('nacionalidad')}
                 </div>
                 <div>
                   <label htmlFor="ej-edit-estado-civil" className="block text-xs font-semibold text-slate-700 mb-1">
@@ -292,10 +358,13 @@ export function ExecutiveClientEditModal({
                   <input
                     id="ej-edit-estado-civil"
                     type="text"
+                    minLength={3}
+                    maxLength={30}
                     value={form.estadoCivil}
-                    onChange={(e) => actualizarCampo('estadoCivil', e.target.value)}
-                    className={INPUT_CLASS}
+                    onChange={(e) => actualizarCampo('estadoCivil', sanitizarSoloLetras(e.target.value, 30))}
+                    className={claseInput(Boolean(erroresCampos.estadoCivil))}
                   />
+                  {renderError('estadoCivil')}
                 </div>
                 <div>
                   <label htmlFor="ej-edit-ocupacion" className="block text-xs font-semibold text-slate-700 mb-1">
@@ -304,10 +373,13 @@ export function ExecutiveClientEditModal({
                   <input
                     id="ej-edit-ocupacion"
                     type="text"
+                    minLength={3}
+                    maxLength={80}
                     value={form.ocupacion}
-                    onChange={(e) => actualizarCampo('ocupacion', e.target.value)}
-                    className={INPUT_CLASS}
+                    onChange={(e) => actualizarCampo('ocupacion', sanitizarTextoOcupacion(e.target.value))}
+                    className={claseInput(Boolean(erroresCampos.ocupacion))}
                   />
+                  {renderError('ocupacion')}
                 </div>
                 <div>
                   <label htmlFor="ej-edit-empresa" className="block text-xs font-semibold text-slate-700 mb-1">
@@ -316,10 +388,13 @@ export function ExecutiveClientEditModal({
                   <input
                     id="ej-edit-empresa"
                     type="text"
+                    minLength={2}
+                    maxLength={100}
                     value={form.empresa}
-                    onChange={(e) => actualizarCampo('empresa', e.target.value)}
-                    className={INPUT_CLASS}
+                    onChange={(e) => actualizarCampo('empresa', sanitizarTextoEmpresa(e.target.value))}
+                    className={claseInput(Boolean(erroresCampos.empresa))}
                   />
+                  {renderError('empresa')}
                 </div>
                 <div>
                   <label htmlFor="ej-edit-ingreso" className="block text-xs font-semibold text-slate-700 mb-1">
@@ -327,13 +402,13 @@ export function ExecutiveClientEditModal({
                   </label>
                   <input
                     id="ej-edit-ingreso"
-                    type="number"
-                    min="1"
-                    step="0.01"
+                    type="text"
+                    inputMode="decimal"
                     value={form.ingresoMensual}
-                    onChange={(e) => actualizarCampo('ingresoMensual', e.target.value)}
-                    className={INPUT_CLASS}
+                    onChange={(e) => actualizarCampo('ingresoMensual', sanitizarDecimalPositivo(e.target.value))}
+                    className={claseInput(Boolean(erroresCampos.ingresoMensual))}
                   />
+                  {renderError('ingresoMensual')}
                 </div>
               </div>
             </div>
@@ -351,10 +426,13 @@ export function ExecutiveClientEditModal({
                   <input
                     id="ej-edit-calle"
                     type="text"
+                    minLength={3}
+                    maxLength={100}
                     value={form.domicilio.calle}
-                    onChange={(e) => actualizarDomicilio('calle', e.target.value)}
-                    className={INPUT_CLASS}
+                    onChange={(e) => actualizarDomicilio('calle', sanitizarCalle(e.target.value))}
+                    className={claseInput(Boolean(erroresCampos['domicilio.calle']))}
                   />
+                  {renderError('domicilio.calle')}
                 </div>
                 <div>
                   <label htmlFor="ej-edit-num-ext" className="block text-xs font-semibold text-slate-700 mb-1">
@@ -363,10 +441,15 @@ export function ExecutiveClientEditModal({
                   <input
                     id="ej-edit-num-ext"
                     type="text"
+                    minLength={1}
+                    maxLength={20}
                     value={form.domicilio.numeroExterior}
-                    onChange={(e) => actualizarDomicilio('numeroExterior', e.target.value)}
-                    className={INPUT_CLASS}
+                    onChange={(e) =>
+                      actualizarDomicilio('numeroExterior', sanitizarNumeroDomicilio(e.target.value))
+                    }
+                    className={claseInput(Boolean(erroresCampos['domicilio.numeroExterior']))}
                   />
+                  {renderError('domicilio.numeroExterior')}
                 </div>
                 <div>
                   <label htmlFor="ej-edit-num-int" className="block text-xs font-semibold text-slate-700 mb-1">
@@ -375,10 +458,14 @@ export function ExecutiveClientEditModal({
                   <input
                     id="ej-edit-num-int"
                     type="text"
+                    maxLength={20}
                     value={form.domicilio.numeroInterior}
-                    onChange={(e) => actualizarDomicilio('numeroInterior', e.target.value)}
-                    className={INPUT_CLASS}
+                    onChange={(e) =>
+                      actualizarDomicilio('numeroInterior', sanitizarNumeroDomicilio(e.target.value))
+                    }
+                    className={claseInput(Boolean(erroresCampos['domicilio.numeroInterior']))}
                   />
+                  {renderError('domicilio.numeroInterior')}
                 </div>
                 <div>
                   <label htmlFor="ej-edit-colonia" className="block text-xs font-semibold text-slate-700 mb-1">
@@ -387,10 +474,13 @@ export function ExecutiveClientEditModal({
                   <input
                     id="ej-edit-colonia"
                     type="text"
+                    minLength={3}
+                    maxLength={80}
                     value={form.domicilio.colonia}
-                    onChange={(e) => actualizarDomicilio('colonia', e.target.value)}
-                    className={INPUT_CLASS}
+                    onChange={(e) => actualizarDomicilio('colonia', sanitizarColonia(e.target.value))}
+                    className={claseInput(Boolean(erroresCampos['domicilio.colonia']))}
                   />
+                  {renderError('domicilio.colonia')}
                 </div>
                 <div>
                   <label htmlFor="ej-edit-municipio" className="block text-xs font-semibold text-slate-700 mb-1">
@@ -399,10 +489,13 @@ export function ExecutiveClientEditModal({
                   <input
                     id="ej-edit-municipio"
                     type="text"
+                    minLength={3}
+                    maxLength={80}
                     value={form.domicilio.municipio}
-                    onChange={(e) => actualizarDomicilio('municipio', e.target.value)}
-                    className={INPUT_CLASS}
+                    onChange={(e) => actualizarDomicilio('municipio', sanitizarLugar(e.target.value, 80))}
+                    className={claseInput(Boolean(erroresCampos['domicilio.municipio']))}
                   />
+                  {renderError('domicilio.municipio')}
                 </div>
                 <div>
                   <label htmlFor="ej-edit-estado" className="block text-xs font-semibold text-slate-700 mb-1">
@@ -411,10 +504,13 @@ export function ExecutiveClientEditModal({
                   <input
                     id="ej-edit-estado"
                     type="text"
+                    minLength={2}
+                    maxLength={60}
                     value={form.domicilio.estado}
-                    onChange={(e) => actualizarDomicilio('estado', e.target.value)}
-                    className={INPUT_CLASS}
+                    onChange={(e) => actualizarDomicilio('estado', sanitizarLugar(e.target.value, 60))}
+                    className={claseInput(Boolean(erroresCampos['domicilio.estado']))}
                   />
+                  {renderError('domicilio.estado')}
                 </div>
                 <div>
                   <label htmlFor="ej-edit-cp" className="block text-xs font-semibold text-slate-700 mb-1">
@@ -423,13 +519,16 @@ export function ExecutiveClientEditModal({
                   <input
                     id="ej-edit-cp"
                     type="text"
+                    inputMode="numeric"
+                    minLength={5}
                     maxLength={5}
                     value={form.domicilio.codigoPostal}
                     onChange={(e) =>
-                      actualizarDomicilio('codigoPostal', e.target.value.replace(/[^0-9]/g, ''))
+                      actualizarDomicilio('codigoPostal', sanitizarSoloDigitos(e.target.value, 5))
                     }
-                    className={INPUT_CLASS}
+                    className={claseInput(Boolean(erroresCampos['domicilio.codigoPostal']))}
                   />
+                  {renderError('domicilio.codigoPostal')}
                 </div>
                 <div>
                   <label htmlFor="ej-edit-pais" className="block text-xs font-semibold text-slate-700 mb-1">
@@ -438,10 +537,13 @@ export function ExecutiveClientEditModal({
                   <input
                     id="ej-edit-pais"
                     type="text"
+                    minLength={3}
+                    maxLength={50}
                     value={form.domicilio.pais}
-                    onChange={(e) => actualizarDomicilio('pais', e.target.value)}
-                    className={INPUT_CLASS}
+                    onChange={(e) => actualizarDomicilio('pais', sanitizarSoloLetras(e.target.value, 50))}
+                    className={claseInput(Boolean(erroresCampos['domicilio.pais']))}
                   />
+                  {renderError('domicilio.pais')}
                 </div>
               </div>
             </div>

@@ -17,6 +17,14 @@ import { PurchaseConfirmModal } from '../components/PurchaseConfirmModal';
 import { PurchaseResultReceiptCard } from '../components/PurchaseResultReceiptCard';
 import { useSession } from '../context/SessionContext';
 import { ApiException } from '../core/network/apiClient';
+import {
+  REGEX_CUENTA_16,
+  REGEX_DIGITOS_REPETIDOS_10,
+  REGEX_REFERENCIA_SERVICIO,
+  sanitizarDecimalPositivo,
+  sanitizarReferenciaServicio,
+  sanitizarSoloDigitos,
+} from '../models/cliente';
 import type { CatalogProduct } from '../models/product';
 import type { PurchaseTransactionResult } from '../models/transaction';
 import { TransactionService } from '../services/transactionService';
@@ -126,15 +134,19 @@ export function PurchasePage({
         ? 'Ingresa el número telefónico de 10 dígitos.'
         : 'Ingresa la referencia del servicio.';
     }
-    if (producto.esRecarga && !/^[0-9]{10}$/.test(destinoLimpio)) {
+    if (
+      producto.esRecarga &&
+      (!/^[0-9]{10}$/.test(destinoLimpio) || REGEX_DIGITOS_REPETIDOS_10.test(destinoLimpio))
+    ) {
       return 'El teléfono debe tener exactamente 10 dígitos numéricos.';
     }
-    if (!producto.esRecarga && destinoLimpio.length < 4) {
-      return 'La referencia debe contener al menos 4 caracteres.';
+    if (!producto.esRecarga && !REGEX_REFERENCIA_SERVICIO.test(destinoLimpio)) {
+      return 'La referencia debe contener de 4 a 40 caracteres alfanuméricos o guión sin espacios.';
     }
 
-    const monto = Number.parseFloat(montoTexto.trim());
-    if (Number.isNaN(monto) || monto <= 0) {
+    const montoStr = montoTexto.trim();
+    const monto = Number.parseFloat(montoStr);
+    if (!/^[0-9]+(?:\.[0-9]{1,2})?$/.test(montoStr) || Number.isNaN(monto) || monto <= 0) {
       return 'Ingresa un monto válido mayor a $0.00.';
     }
     if (precioFijo && Math.abs(monto - producto.precio) > 0.01) {
@@ -143,8 +155,12 @@ export function PurchasePage({
     if (saldoActual !== undefined && monto > saldoActual) {
       return `Saldo insuficiente en la cuenta ($${saldoActual.toFixed(2)} disponibles).`;
     }
-    if (cuenta.trim().length === 0) {
+    const cuentaLimpia = cuenta.trim();
+    if (cuentaLimpia.length === 0) {
       return 'Ingresa el número de cuenta bancaria.';
+    }
+    if (!REGEX_CUENTA_16.test(cuentaLimpia)) {
+      return 'La cuenta bancaria de cargo debe tener exactamente 16 dígitos numéricos.';
     }
     if (codigo2FA.trim().length === 0) {
       return 'Solicita e ingresa el código 2FA de 6 dígitos para autorizar la compra.';
@@ -213,7 +229,7 @@ export function PurchasePage({
   }
 
   return (
-    <div className="max-w-xl mx-auto space-y-5">
+    <div className="max-w-2xl mx-auto space-y-5">
       <div className="flex items-center justify-between gap-3">
         <button
           type="button"
@@ -262,10 +278,18 @@ export function PurchasePage({
               <input
                 id="destino"
                 type={producto.esRecarga ? 'tel' : 'text'}
+                inputMode={producto.esRecarga ? 'numeric' : 'text'}
+                minLength={producto.esRecarga ? 10 : 4}
                 maxLength={producto.esRecarga ? 10 : 40}
-                placeholder={producto.esRecarga ? '5512345678' : 'Referencia de recibo'}
+                placeholder={producto.esRecarga ? '5512345678' : 'Referencia de recibo sin espacios'}
                 value={destino}
-                onChange={(e) => setDestino(e.target.value)}
+                onChange={(e) =>
+                  setDestino(
+                    producto.esRecarga
+                      ? sanitizarSoloDigitos(e.target.value, 10)
+                      : sanitizarReferenciaServicio(e.target.value),
+                  )
+                }
                 className="w-full rounded-xl border border-borde bg-white pl-10 pr-4 py-2.5 text-sm text-slate-900 focus:border-primario focus:outline-none focus:ring-2 focus:ring-primario/20"
               />
             </div>
@@ -279,10 +303,10 @@ export function PurchasePage({
               <DollarSign className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
               <input
                 id="monto"
-                type="number"
-                step="0.01"
+                type="text"
+                inputMode="decimal"
                 value={montoTexto}
-                onChange={(e) => setMontoTexto(e.target.value)}
+                onChange={(e) => setMontoTexto(sanitizarDecimalPositivo(e.target.value))}
                 className="w-full rounded-xl border border-borde bg-white pl-10 pr-4 py-2.5 text-sm text-slate-900 focus:border-primario focus:outline-none focus:ring-2 focus:ring-primario/20"
               />
             </div>
@@ -297,8 +321,11 @@ export function PurchasePage({
               <input
                 id="cuenta"
                 type="text"
+                inputMode="numeric"
+                minLength={16}
+                maxLength={16}
                 value={cuenta}
-                onChange={(e) => setCuenta(e.target.value)}
+                onChange={(e) => setCuenta(sanitizarSoloDigitos(e.target.value, 16))}
                 className="w-full rounded-xl border border-borde bg-white pl-10 pr-4 py-2.5 text-sm text-slate-900 focus:border-primario focus:outline-none focus:ring-2 focus:ring-primario/20"
               />
             </div>
