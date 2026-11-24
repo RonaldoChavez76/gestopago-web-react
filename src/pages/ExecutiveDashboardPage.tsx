@@ -201,7 +201,7 @@ export function ExecutiveDashboardPage({
       setCargandoAuditoria(true);
       setErrorGlobal(null);
       try {
-        const lista = await transactionService.obtenerHistorialComprasExitosas({
+        const lista = await transactionService.obtenerHistorialCompleto({
           clienteId: idLimpio.length > 0 ? Number.parseInt(idLimpio, 10) : undefined,
           numeroCuenta: cuentaLimpia.length > 0 ? cuentaLimpia : undefined,
         });
@@ -1135,7 +1135,9 @@ export function ExecutiveDashboardPage({
           <div className="bg-white rounded-2xl border border-borde p-5 shadow-xs space-y-5">
             <div className="flex items-center gap-2 text-base font-bold text-slate-900">
               <ReceiptText className="w-4 h-4 text-primario" />
-              <h2>Auditoría de Compras Exitosas y Comprobantes UPC</h2>
+              <h2 className="text-base font-bold text-slate-900">
+                Auditoría de Compras y Comprobantes UPC
+              </h2>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -1226,11 +1228,11 @@ export function ExecutiveDashboardPage({
             {auditoriaConsultada && (
               <div className="space-y-3">
                 <h3 className="text-sm font-bold text-slate-900">
-                  Operaciones Exitosas Encontradas ({comprasAuditadas.length})
+                  Operaciones Encontradas ({comprasAuditadas.length})
                 </h3>
                 {comprasAuditadas.length === 0 ? (
                   <p className="text-sm text-slate-500">
-                    No existen compras exitosas registradas para ese cliente o cuenta.
+                    No existen compras registradas para ese cliente o cuenta.
                   </p>
                 ) : (
                   <div className="space-y-2.5">
@@ -1239,7 +1241,11 @@ export function ExecutiveDashboardPage({
                         key={`${compra.idTx ?? 'tx'}-${compra.upc}-${index}`}
                         type="button"
                         onClick={() => setCompraModal(compra)}
-                        className="w-full text-left rounded-2xl border border-borde bg-white p-4 hover:border-primario hover:bg-primario-suave/20 transition-colors flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 cursor-pointer"
+                        className={`w-full text-left rounded-2xl border bg-white p-4 transition-colors flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 cursor-pointer ${
+                          compra.exitoso
+                            ? 'border-borde hover:border-primario hover:bg-primario-suave/20'
+                            : 'border-red-200 hover:border-red-300 hover:bg-red-50/30'
+                        }`}
                       >
                         <div>
                           <p className="font-bold text-slate-900">
@@ -1249,13 +1255,24 @@ export function ExecutiveDashboardPage({
                             UPC: <span className="font-mono">{compra.upc}</span> • ID Tx:{' '}
                             {compra.idTx || 'N/D'} • Fecha: {compra.fechaMostrar}
                           </p>
+                          {!compra.exitoso && (compra.motivoRechazo || compra.mensaje) && (
+                            <p className="text-xs font-medium text-red-700 mt-1">
+                              Motivo: {compra.motivoRechazo ?? compra.mensaje}
+                            </p>
+                          )}
                         </div>
                         <div className="flex items-center gap-2 shrink-0">
                           <span className="font-bold text-primario-oscuro">
                             {formatearMonedaMxn(compra.monto)}
                           </span>
-                          <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-xs font-bold">
-                            Ver recibo
+                          <span
+                            className={`px-2.5 py-0.5 rounded-full text-xs font-bold ${
+                              compra.exitoso
+                                ? 'bg-emerald-100 text-emerald-800'
+                                : 'bg-red-100 text-red-800'
+                            }`}
+                          >
+                            {compra.exitoso ? 'Ver recibo' : compra.estadoRaw}
                           </span>
                         </div>
                       </button>

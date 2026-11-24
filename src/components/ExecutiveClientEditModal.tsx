@@ -203,7 +203,7 @@ export function ExecutiveClientEditModal({
                   <input
                     id="ej-edit-primer-nombre"
                     type="text"
-                    minLength={2}
+                    minLength={3}
                     maxLength={50}
                     value={form.primerNombre}
                     onChange={(e) => actualizarCampo('primerNombre', sanitizarSoloLetras(e.target.value, 50))}
@@ -232,7 +232,7 @@ export function ExecutiveClientEditModal({
                   <input
                     id="ej-edit-apellido-paterno"
                     type="text"
-                    minLength={2}
+                    minLength={3}
                     maxLength={50}
                     value={form.apellidoPaterno}
                     onChange={(e) =>
@@ -249,7 +249,7 @@ export function ExecutiveClientEditModal({
                   <input
                     id="ej-edit-apellido-materno"
                     type="text"
-                    minLength={2}
+                    minLength={3}
                     maxLength={50}
                     value={form.apellidoMaterno}
                     onChange={(e) =>

@@ -134,8 +134,8 @@ describe('Módulo Perfil del Cliente: Consulta, Edición, Contraseña y Baja Ló
     expect(storage.obtenerSesion()?.correo).toBe('ana.nueva@correo.com');
 
     await user.type(screen.getByLabelText(/Contraseña actual/i), 'Prueba2026!');
-    await user.type(screen.getByLabelText(/^Nueva contraseña \*/i), 'NuevaPass2026$');
-    await user.type(screen.getByLabelText(/Confirmar nueva contraseña/i), 'NuevaPass2026$');
+    await user.type(screen.getByLabelText(/^Nueva contraseña \*/i), 'NuevaPas26$');
+    await user.type(screen.getByLabelText(/Confirmar nueva contraseña/i), 'NuevaPas26$');
     await user.click(screen.getByRole('button', { name: /Actualizar Contraseña/i }));
 
     expect(await screen.findByText('Contraseña actualizada correctamente.')).toBeInTheDocument();

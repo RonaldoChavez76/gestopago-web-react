@@ -199,7 +199,7 @@ export function AccountProfilePage({ clienteServiceOverride }: AccountProfilePag
     }
     if (!REGEX_PASSWORD_SEGURA.test(passwordNueva)) {
       setErrorPassword(
-        'La nueva contraseña debe tener entre 8 y 72 caracteres sin espacios, con mayúscula, minúscula, número y símbolo.',
+        'La nueva contraseña debe tener entre 8 y 12 caracteres sin espacios, con mayúscula, minúscula, número y símbolo.',
       );
       return;
     }
@@ -351,7 +351,7 @@ export function AccountProfilePage({ clienteServiceOverride }: AccountProfilePag
             <input
               id="perfil-primer-nombre"
               type="text"
-              minLength={2}
+              minLength={3}
               maxLength={50}
               value={perfil.primerNombre}
               onChange={(e) => actualizarCampo('primerNombre', sanitizarSoloLetras(e.target.value, 50))}
@@ -382,7 +382,7 @@ export function AccountProfilePage({ clienteServiceOverride }: AccountProfilePag
             <input
               id="perfil-apellido-paterno"
               type="text"
-              minLength={2}
+              minLength={3}
               maxLength={50}
               value={perfil.apellidoPaterno}
               onChange={(e) => actualizarCampo('apellidoPaterno', sanitizarSoloLetras(e.target.value, 50))}
@@ -398,7 +398,7 @@ export function AccountProfilePage({ clienteServiceOverride }: AccountProfilePag
             <input
               id="perfil-apellido-materno"
               type="text"
-              minLength={2}
+              minLength={3}
               maxLength={50}
               value={perfil.apellidoMaterno}
               onChange={(e) => actualizarCampo('apellidoMaterno', sanitizarSoloLetras(e.target.value, 50))}
@@ -775,13 +775,13 @@ export function AccountProfilePage({ clienteServiceOverride }: AccountProfilePag
               id="pass-nueva"
               type="password"
               minLength={8}
-              maxLength={72}
+              maxLength={12}
               value={passwordNueva}
-              onChange={(e) => setPasswordNueva(sanitizarSinEspacios(e.target.value, 72))}
+              onChange={(e) => setPasswordNueva(sanitizarSinEspacios(e.target.value, 12))}
               className={claseInput(false)}
             />
             <p className="text-[11px] text-slate-500 mt-1">
-              8 a 72 caracteres sin espacios con mayúscula, minúscula, número y símbolo.
+              8 a 12 caracteres sin espacios con mayúscula, minúscula, número y símbolo.
             </p>
           </div>
 
@@ -793,9 +793,9 @@ export function AccountProfilePage({ clienteServiceOverride }: AccountProfilePag
               id="pass-confirmar"
               type="password"
               minLength={8}
-              maxLength={72}
+              maxLength={12}
               value={confirmarPassword}
-              onChange={(e) => setConfirmarPassword(sanitizarSinEspacios(e.target.value, 72))}
+              onChange={(e) => setConfirmarPassword(sanitizarSinEspacios(e.target.value, 12))}
               className={claseInput(false)}
             />
           </div>

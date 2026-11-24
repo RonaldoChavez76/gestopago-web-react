@@ -189,8 +189,8 @@ describe('Catálogo paginado, logos GestoPago, tarjeta BBVA y validaciones de fo
   it('aplica validaciones de longitud minima, solo letras, sin espacios y cuenta 16 digitos', async () => {
     const user = userEvent.setup();
     const form = crearFormularioRegistroInicial();
-    form.primerNombre = 'A';
-    expect(validarDatosClienteBase(form)).toContain('2 y 50 caracteres');
+    form.primerNombre = 'Li';
+    expect(validarDatosClienteBase(form)).toContain('3 y 50 caracteres');
 
     form.primerNombre = 'Ana';
     form.apellidoPaterno = 'Pérez';
@@ -223,7 +223,11 @@ describe('Catálogo paginado, logos GestoPago, tarjeta BBVA y validaciones de fo
     form.rfc = 'LOGA960512ABC';
     form.password = 'Clave 2026!';
     form.confirmarPassword = 'Clave 2026!';
-    expect(validarFormularioRegistro(form)).toContain('sin espacios');
+    expect(validarFormularioRegistro(form)).toContain('entre 8 y 12 caracteres');
+
+    form.password = 'ClaveSegura1!';
+    form.confirmarPassword = 'ClaveSegura1!';
+    expect(validarFormularioRegistro(form)).toContain('entre 8 y 12 caracteres');
 
     const storage = new SessionStorageService();
     const apiClient = new ApiClient({ sessionStorage: storage, fetchFn: vi.fn<typeof fetch>() });

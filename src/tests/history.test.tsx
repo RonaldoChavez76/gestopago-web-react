@@ -193,4 +193,68 @@ describe('Fase 5: Historial de Compras Exitosas y Detalle por UPC', () => {
       await within(modal).findByText('Comprobante verificado en tiempo real con el servidor.'),
     ).toBeInTheDocument();
   });
+
+  it('HistoryPage muestra compras rechazadas con su motivo especifico sin sumarlas al total operado', async () => {
+    const user = userEvent.setup();
+    const storage = new SessionStorageService();
+    storage.guardarSesion(crearSesionActiva());
+
+    const COMPRA_RECHAZADA = {
+      upc: 'RJ_SALDO_09',
+      tipoOperacion: 'RECARGA',
+      idProducto: 582,
+      idServicio: 133,
+      nombreProducto: 'Recarga Telcel $200',
+      exitoso: false,
+      estado: 'RECHAZADA',
+      codigo: 'SALDO_INS',
+      mensaje: 'Saldo insuficiente en la cuenta 4229215075268914.',
+      motivoRechazo: 'Saldo insuficiente en la cuenta 4229215075268914.',
+      monto: 200.0,
+      telefono: '5512345678',
+      numeroCuenta: '4229215075268914',
+      fechaRegistro: '2026-11-24T00:10:00',
+    };
+
+    const fetchMock = vi.fn<typeof fetch>().mockImplementation(async (input) => {
+      const url = String(input);
+      if (url.includes('/historial/completo')) {
+        return crearRespuestaJson({
+          success: true,
+          data: [COMPRA_RECARGA, COMPRA_RECHAZADA],
+        });
+      }
+      return crearRespuestaJson({}, 404);
+    });
+
+    const apiClient = new ApiClient({ sessionStorage: storage, fetchFn: fetchMock });
+
+    render(
+      <MemoryRouter initialEntries={['/historial']}>
+        <SessionProvider storageOverride={storage} apiClientOverride={apiClient} enableAutoSync={false}>
+          <Routes>
+            <Route path="/historial" element={<HistoryPage />} />
+          </Routes>
+        </SessionProvider>
+      </MemoryRouter>,
+    );
+
+    expect(await screen.findByText('Operaciones Exitosas: 1')).toBeInTheDocument();
+    expect(screen.getByText('Rechazadas / Fallidas: 1')).toBeInTheDocument();
+    expect(screen.getByText('Total operado: $50.00 MXN')).toBeInTheDocument();
+    expect(screen.getByText('Recarga Telcel $200')).toBeInTheDocument();
+    expect(screen.getByText(/Saldo insuficiente en la cuenta 4229215075268914\./)).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Rechazadas' }));
+    expect(screen.getByText('Recarga Telcel $200')).toBeInTheDocument();
+    expect(screen.queryByText('Recarga Telcel $50')).not.toBeInTheDocument();
+
+    const tarjetaRechazada = screen.getByText('Recarga Telcel $200').closest('article')!;
+    await user.click(within(tarjetaRechazada).getByRole('button', { name: /Ver comprobante/i }));
+
+    const modal = await screen.findByRole('dialog');
+    expect(within(modal).getByText('Detalle de Compra Rechazada')).toBeInTheDocument();
+    expect(within(modal).getByText('Motivo específico del rechazo')).toBeInTheDocument();
+    expect(within(modal).getByText('SALDO_INS')).toBeInTheDocument();
+  });
 });

@@ -59,7 +59,7 @@ export function HistoryDetailModal({
       <div className="w-full max-w-lg rounded-2xl border border-borde bg-white p-5 sm:p-6 shadow-xl my-8 space-y-4">
         <div className="flex items-center justify-between gap-3">
           <h2 id="titulo-detalle-compra" className="text-lg font-bold text-slate-900">
-            Detalle de Compra Exitosa
+            {detalleActual.exitoso ? 'Detalle de Compra Exitosa' : 'Detalle de Compra Rechazada'}
           </h2>
           <button
             type="button"
