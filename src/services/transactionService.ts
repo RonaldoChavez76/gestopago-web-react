@@ -165,9 +165,19 @@ export class TransactionService {
     }
   }
 
-  async obtenerHistorialComprasExitosas(
-    params: ConsultarHistorialParams = {},
-  ): Promise<PurchaseTransactionResult[]> {
+  private parsearListaTransacciones(data: unknown): PurchaseTransactionResult[] {
+    if (!Array.isArray(data)) {
+      return [];
+    }
+    return data
+      .filter(
+        (item): item is Record<string, unknown> =>
+          Boolean(item) && typeof item === 'object' && !Array.isArray(item),
+      )
+      .map((item) => parsePurchaseTransactionResult(item));
+  }
+
+  private construirQueryHistorial(params: ConsultarHistorialParams): Record<string, string> | undefined {
     const queryParameters: Record<string, string> = {};
     if (params.clienteId !== undefined && params.clienteId !== null) {
       queryParameters.clienteId = String(params.clienteId);
@@ -175,22 +185,21 @@ export class TransactionService {
     if (params.numeroCuenta && params.numeroCuenta.trim().length > 0) {
       queryParameters.numeroCuenta = params.numeroCuenta.trim();
     }
+    return Object.keys(queryParameters).length > 0 ? queryParameters : undefined;
+  }
+
+  async obtenerHistorialComprasExitosas(
+    params: ConsultarHistorialParams = {},
+  ): Promise<PurchaseTransactionResult[]> {
+    const queryParameters = this.construirQueryHistorial(params);
 
     try {
       const response = await this.apiClient.getJson<unknown>(
         '/api/gestopago/transacciones/historial/exitosas',
-        {
-          queryParameters: Object.keys(queryParameters).length > 0 ? queryParameters : undefined,
-        },
+        { queryParameters },
       );
       if (Array.isArray(response.data)) {
-        return response.data
-          .filter(
-            (item): item is Record<string, unknown> =>
-              Boolean(item) && typeof item === 'object' && !Array.isArray(item),
-          )
-          .map((item) => parsePurchaseTransactionResult(item))
-          .filter((tx) => tx.exitoso);
+        return this.parsearListaTransacciones(response.data).filter((tx) => tx.exitoso);
       }
     } catch (error) {
       if (error instanceof ApiException) {
@@ -203,28 +212,40 @@ export class TransactionService {
     }
 
     const fallbackResp = await this.apiClient.getJson<unknown>('/api/gestopago/transacciones');
-    if (Array.isArray(fallbackResp.data)) {
-      const cuentaLimpia = params.numeroCuenta?.trim();
-      return fallbackResp.data
-        .filter(
-          (item): item is Record<string, unknown> =>
-            Boolean(item) && typeof item === 'object' && !Array.isArray(item),
-        )
-        .map((item) => parsePurchaseTransactionResult(item))
-        .filter((tx) => {
-          if (!tx.exitoso) return false;
-          if (
-            cuentaLimpia &&
-            cuentaLimpia.length > 0 &&
-            tx.numeroCuenta &&
-            tx.numeroCuenta.length > 0
-          ) {
-            return tx.numeroCuenta === cuentaLimpia;
-          }
-          return true;
-        });
+    const cuentaLimpia = params.numeroCuenta?.trim();
+    return this.parsearListaTransacciones(fallbackResp.data).filter((tx) => {
+      if (!tx.exitoso) return false;
+      if (cuentaLimpia && cuentaLimpia.length > 0 && tx.numeroCuenta && tx.numeroCuenta.length > 0) {
+        return tx.numeroCuenta === cuentaLimpia;
+      }
+      return true;
+    });
+  }
+
+  async obtenerHistorialCompleto(
+    params: ConsultarHistorialParams = {},
+  ): Promise<PurchaseTransactionResult[]> {
+    const queryParameters = this.construirQueryHistorial(params);
+
+    try {
+      const response = await this.apiClient.getJson<unknown>(
+        '/api/gestopago/transacciones/historial/completo',
+        { queryParameters },
+      );
+      if (Array.isArray(response.data)) {
+        return this.parsearListaTransacciones(response.data);
+      }
+    } catch (error) {
+      if (error instanceof ApiException) {
+        if (error.statusCode === 401 || error.statusCode !== 404) {
+          throw error;
+        }
+      } else {
+        throw error;
+      }
     }
-    return [];
+
+    return this.obtenerHistorialComprasExitosas(params);
   }
 
   async consultarDetallePorUpc(upc: string): Promise<PurchaseTransactionResult> {

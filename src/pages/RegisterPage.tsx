@@ -215,9 +215,9 @@ export function RegisterPage({ clienteServiceOverride }: RegisterPageProps) {
                 <input
                   id="reg-primer-nombre"
                   type="text"
-                  minLength={2}
+                  minLength={3}
                   maxLength={50}
-                  placeholder="Mínimo 2 letras"
+                  placeholder="Mínimo 3 letras"
                   value={form.primerNombre}
                   onChange={(e) => actualizarCampo('primerNombre', sanitizarSoloLetras(e.target.value, 50))}
                   className={claseInput(Boolean(erroresCampos.primerNombre))}
@@ -233,7 +233,7 @@ export function RegisterPage({ clienteServiceOverride }: RegisterPageProps) {
                   id="reg-segundo-nombre"
                   type="text"
                   maxLength={50}
-                  placeholder="Opcional (2-50 letras)"
+                  placeholder="Opcional (3-50 letras)"
                   value={form.segundoNombre}
                   onChange={(e) => actualizarCampo('segundoNombre', sanitizarSoloLetras(e.target.value, 50))}
                   className={claseInput(Boolean(erroresCampos.segundoNombre))}
@@ -248,9 +248,9 @@ export function RegisterPage({ clienteServiceOverride }: RegisterPageProps) {
                 <input
                   id="reg-apellido-paterno"
                   type="text"
-                  minLength={2}
+                  minLength={3}
                   maxLength={50}
-                  placeholder="Mínimo 2 letras"
+                  placeholder="Mínimo 3 letras"
                   value={form.apellidoPaterno}
                   onChange={(e) => actualizarCampo('apellidoPaterno', sanitizarSoloLetras(e.target.value, 50))}
                   className={claseInput(Boolean(erroresCampos.apellidoPaterno))}
@@ -265,9 +265,9 @@ export function RegisterPage({ clienteServiceOverride }: RegisterPageProps) {
                 <input
                   id="reg-apellido-materno"
                   type="text"
-                  minLength={2}
+                  minLength={3}
                   maxLength={50}
-                  placeholder="Mínimo 2 letras"
+                  placeholder="Mínimo 3 letras"
                   value={form.apellidoMaterno}
                   onChange={(e) => actualizarCampo('apellidoMaterno', sanitizarSoloLetras(e.target.value, 50))}
                   className={claseInput(Boolean(erroresCampos.apellidoMaterno))}
@@ -653,9 +653,9 @@ export function RegisterPage({ clienteServiceOverride }: RegisterPageProps) {
                     id="reg-password"
                     type={mostrarPassword ? 'text' : 'password'}
                     minLength={8}
-                    maxLength={72}
+                    maxLength={12}
                     value={form.password}
-                    onChange={(e) => actualizarCampo('password', sanitizarSinEspacios(e.target.value, 72))}
+                    onChange={(e) => actualizarCampo('password', sanitizarSinEspacios(e.target.value, 12))}
                     className={`${claseInput(Boolean(erroresCampos.password))} pr-10`}
                   />
                   <button
@@ -668,7 +668,7 @@ export function RegisterPage({ clienteServiceOverride }: RegisterPageProps) {
                   </button>
                 </div>
                 <p className="text-[11px] text-slate-500 mt-1">
-                  8 a 72 caracteres sin espacios con mayúscula, minúscula, número y símbolo.
+                  8 a 12 caracteres sin espacios con mayúscula, minúscula, número y símbolo.
                 </p>
                 {renderError('password')}
               </div>
@@ -681,10 +681,10 @@ export function RegisterPage({ clienteServiceOverride }: RegisterPageProps) {
                   id="reg-confirmar-password"
                   type={mostrarPassword ? 'text' : 'password'}
                   minLength={8}
-                  maxLength={72}
+                  maxLength={12}
                   value={form.confirmarPassword}
                   onChange={(e) =>
-                    actualizarCampo('confirmarPassword', sanitizarSinEspacios(e.target.value, 72))
+                    actualizarCampo('confirmarPassword', sanitizarSinEspacios(e.target.value, 12))
                   }
                   className={claseInput(Boolean(erroresCampos.confirmarPassword))}
                 />

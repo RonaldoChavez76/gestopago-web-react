@@ -83,7 +83,7 @@ export interface RegistroClientePayload extends ActualizarClientePayload {
 }
 
 export const REGEX_PASSWORD_SEGURA =
-  /^(?!.*\s)(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[^A-Za-z0-9]).{8,72}$/;
+  /^(?!.*\s)(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[^A-Za-z0-9]).{8,12}$/;
 export const REGEX_EMAIL = /^[^\s@]+@[^\s@]+\.[A-Za-z]{2,}$/;
 export const REGEX_CURP =
   /^[A-Z][AEIOUX][A-Z]{2}[0-9]{6}[HM][A-Z]{5}[A-Z0-9][0-9]$/i;
@@ -275,10 +275,10 @@ function validarCampoNombre(
   if (limpio.length === 0) {
     return obligatorio ? `El ${etiqueta} es obligatorio.` : null;
   }
-  if (limpio.length < 2 || limpio.length > 50) {
+  if (limpio.length < 3 || limpio.length > 50) {
     return obligatorio
-      ? `El ${etiqueta} debe tener entre 2 y 50 caracteres.`
-      : `El ${etiqueta} debe tener entre 2 y 50 caracteres si decides llenarlo.`;
+      ? `El ${etiqueta} debe tener entre 3 y 50 caracteres.`
+      : `El ${etiqueta} debe tener entre 3 y 50 caracteres si decides llenarlo.`;
   }
   if (!REGEX_SOLO_LETRAS.test(limpio)) {
     return `El ${etiqueta} solo debe contener letras y espacios simples.`;
@@ -430,7 +430,7 @@ export function validarCamposRegistro(form: RegistroClienteForm): Record<string,
   }
   if (!REGEX_PASSWORD_SEGURA.test(form.password)) {
     errores.password =
-      'La contraseña debe tener entre 8 y 72 caracteres sin espacios, con mayúscula, minúscula, número y símbolo.';
+      'La contraseña debe tener entre 8 y 12 caracteres sin espacios, con mayúscula, minúscula, número y símbolo.';
   }
   if (form.confirmarPassword.length === 0 || form.password !== form.confirmarPassword) {
     errores.confirmarPassword = 'La confirmación no coincide con la contraseña ingresada.';

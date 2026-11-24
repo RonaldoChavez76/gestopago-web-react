@@ -15,6 +15,7 @@ export interface PurchaseTransactionResult {
   estadoVisual: EstadoCompraResultado;
   codigo?: string;
   mensaje: string;
+  motivoRechazo?: string;
   idTx?: string;
   numAutorizacion?: string;
   monto: number;
@@ -98,6 +99,8 @@ export function parsePurchaseTransactionResult(
   const destinoMostrar =
     referencia && referencia.trim().length > 0 ? referencia : (telefono ?? '-');
 
+  const motivoRechazo = toStringOrUndefined(json.motivoRechazo);
+
   return {
     upc: String(json.upc ?? 'SIN-UPC'),
     tipoOperacion: String(json.tipoOperacion ?? 'RECARGA'),
@@ -110,6 +113,7 @@ export function parsePurchaseTransactionResult(
     estadoVisual,
     codigo: toStringOrUndefined(json.codigo),
     mensaje: String(json.mensaje ?? 'Operación procesada'),
+    motivoRechazo: estadoVisual === 'exitosa' ? undefined : (motivoRechazo ?? toStringOrUndefined(json.mensaje)),
     idTx: toStringOrUndefined(json.idTx),
     numAutorizacion: toStringOrUndefined(json.numAutorizacion),
     monto,

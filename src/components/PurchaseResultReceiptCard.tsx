@@ -104,7 +104,11 @@ export function PurchaseResultReceiptCard({
         </div>
 
         <h2 className={`mt-4 text-2xl font-bold ${config.titleClass}`}>{config.tituloEstado}</h2>
-        <p className="mt-1.5 text-sm text-slate-600">{resultado.mensaje}</p>
+        {(resultado.exitoso ||
+          !resultado.motivoRechazo ||
+          resultado.motivoRechazo !== resultado.mensaje) && (
+          <p className="mt-1.5 text-sm text-slate-600">{resultado.mensaje}</p>
+        )}
         {config.avisoAdicional && (
           <p className="mt-2 rounded-lg bg-fondo px-3 py-2 text-xs font-medium text-slate-700 border border-borde">
             {config.avisoAdicional}
@@ -117,6 +121,20 @@ export function PurchaseResultReceiptCard({
           <span className="text-slate-500">Estado de la operación</span>
           <span className="font-bold text-slate-900 text-right">{config.etiquetaCorta}</span>
         </div>
+        {!resultado.exitoso && resultado.motivoRechazo && (
+          <div className="flex flex-col sm:flex-row sm:justify-between gap-1 sm:gap-3 rounded-lg bg-red-50/80 border border-red-200 px-3 py-2">
+            <span className="text-red-700 font-semibold shrink-0">Motivo específico del rechazo</span>
+            <span className="font-bold text-red-900 sm:text-right">
+              {resultado.motivoRechazo}
+            </span>
+          </div>
+        )}
+        {!resultado.exitoso && resultado.codigo && (
+          <div className="flex justify-between gap-3">
+            <span className="text-slate-500">Código de rechazo</span>
+            <span className="font-bold font-mono text-red-800 text-right">{resultado.codigo}</span>
+          </div>
+        )}
         <div className="flex justify-between gap-3">
           <span className="text-slate-500">Producto adquirido</span>
           <span className="font-bold text-slate-900 text-right">
