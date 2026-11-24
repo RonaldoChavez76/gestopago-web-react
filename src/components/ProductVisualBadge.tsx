@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { Gift, ReceiptText, Smartphone, Wifi, Zap } from 'lucide-react';
 import type { CatalogProduct } from '../models/product';
 
@@ -79,8 +80,31 @@ function resolverEstiloVisual(producto: CatalogProduct): VisualStyle {
 
 export function ProductVisualBadge({ producto, size = 'md' }: ProductVisualBadgeProps) {
   const { containerClass, tipoIcono } = resolverEstiloVisual(producto);
-  const sizeClass = size === 'lg' ? 'w-14 h-14 rounded-2xl' : 'w-11 h-11 rounded-xl';
+  const [errorCarga, setErrorCarga] = useState(false);
+
+  useEffect(() => {
+    setErrorCarga(false);
+  }, [producto.logoUrl]);
+
+  const sizeClass = size === 'lg' ? 'w-14 h-14 rounded-2xl' : 'w-12 h-12 rounded-xl';
   const iconClass = size === 'lg' ? 'w-7 h-7' : 'w-5 h-5';
+
+  if (producto.logoUrl && !errorCarga) {
+    return (
+      <div
+        className={`shrink-0 flex items-center justify-center border border-borde bg-white p-1.5 overflow-hidden ${sizeClass}`}
+      >
+        <img
+          src={producto.logoUrl}
+          alt={`Logo de ${producto.servicio}`}
+          loading="lazy"
+          decoding="async"
+          onError={() => setErrorCarga(true)}
+          className="w-full h-full object-contain"
+        />
+      </div>
+    );
+  }
 
   return (
     <div

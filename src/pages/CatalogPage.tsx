@@ -1,6 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
   CloudOff,
   Filter,
   Info,
@@ -27,6 +31,28 @@ const CATEGORIAS_CATALOGO: CategoryFilter[] = [
   'Entretenimiento y Pines',
 ];
 
+const TAMANOS_PAGINA = [12, 24, 36] as const;
+
+function generarElementosPaginacion(paginaActual: number, totalPaginas: number): Array<number | 'elipsis'> {
+  if (totalPaginas <= 7) {
+    return Array.from({ length: totalPaginas }, (_, idx) => idx + 1);
+  }
+  const resultado: Array<number | 'elipsis'> = [1];
+  const inicio = Math.max(2, paginaActual - 1);
+  const fin = Math.min(totalPaginas - 1, paginaActual + 1);
+  if (inicio > 2) {
+    resultado.push('elipsis');
+  }
+  for (let p = inicio; p <= fin; p++) {
+    resultado.push(p);
+  }
+  if (fin < totalPaginas - 1) {
+    resultado.push('elipsis');
+  }
+  resultado.push(totalPaginas);
+  return resultado;
+}
+
 export interface CatalogPageProps {
   catalogServiceOverride?: CatalogService;
 }
@@ -44,6 +70,8 @@ export function CatalogPage({ catalogServiceOverride }: CatalogPageProps) {
   const [categoriaSeleccionada, setCategoriaSeleccionada] = useState<CategoryFilter>('Todos');
   const [filtroBusqueda, setFiltroBusqueda] = useState('');
   const [soloDisponibles, setSoloDisponibles] = useState(false);
+  const [paginaActual, setPaginaActual] = useState(1);
+  const [tamanoPagina, setTamanoPagina] = useState<number>(12);
   const [cargando, setCargando] = useState(true);
   const [errorMensaje, setErrorMensaje] = useState<string | null>(null);
   const [productoDetalle, setProductoDetalle] = useState<CatalogProduct | null>(null);
@@ -54,6 +82,7 @@ export function CatalogPage({ catalogServiceOverride }: CatalogPageProps) {
     try {
       const lista = await service.obtenerCatalogoProductos();
       setProductos(lista);
+      setPaginaActual(1);
     } catch (error) {
       if (error instanceof ApiException) {
         setErrorMensaje(error.message);
@@ -68,6 +97,10 @@ export function CatalogPage({ catalogServiceOverride }: CatalogPageProps) {
   useEffect(() => {
     void cargarCatalogo();
   }, [cargarCatalogo]);
+
+  useEffect(() => {
+    setPaginaActual(1);
+  }, [categoriaSeleccionada, filtroBusqueda, soloDisponibles, tamanoPagina]);
 
   const contadoresPorCategoria = useMemo(() => {
     const counts: Record<CategoryFilter, number> = {
@@ -104,6 +137,19 @@ export function CatalogPage({ catalogServiceOverride }: CatalogPageProps) {
     });
   }, [productos, categoriaSeleccionada, filtroBusqueda, soloDisponibles]);
 
+  const totalPaginas = Math.max(1, Math.ceil(productosFiltrados.length / tamanoPagina));
+  const paginaSegura = Math.min(paginaActual, totalPaginas);
+  const indiceInicio = (paginaSegura - 1) * tamanoPagina;
+  const indiceFin = Math.min(indiceInicio + tamanoPagina, productosFiltrados.length);
+  const productosPagina = useMemo(
+    () => productosFiltrados.slice(indiceInicio, indiceFin),
+    [productosFiltrados, indiceInicio, indiceFin],
+  );
+  const elementosPaginacion = useMemo(
+    () => generarElementosPaginacion(paginaSegura, totalPaginas),
+    [paginaSegura, totalPaginas],
+  );
+
   const hayFiltrosActivos =
     categoriaSeleccionada !== 'Todos' || filtroBusqueda.trim().length > 0 || soloDisponibles;
 
@@ -111,6 +157,13 @@ export function CatalogPage({ catalogServiceOverride }: CatalogPageProps) {
     setCategoriaSeleccionada('Todos');
     setFiltroBusqueda('');
     setSoloDisponibles(false);
+    setPaginaActual(1);
+  };
+
+  const irAPagina = (nuevaPagina: number) => {
+    const acotada = Math.max(1, Math.min(nuevaPagina, totalPaginas));
+    setPaginaActual(acotada);
+    window.scrollTo?.({ top: 0, behavior: 'smooth' });
   };
 
   const irACompra = (producto: CatalogProduct) => {
@@ -167,10 +220,11 @@ export function CatalogPage({ catalogServiceOverride }: CatalogPageProps) {
             type="button"
             aria-pressed={soloDisponibles}
             onClick={() => setSoloDisponibles((prev) => !prev)}
-            className={`inline-flex items-center justify-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-semibold transition-colors cursor-pointer ${soloDisponibles
-              ? 'border-primario bg-primario-suave text-primario-oscuro'
-              : 'border-borde bg-white text-slate-700 hover:bg-slate-50'
-              }`}
+            className={`inline-flex items-center justify-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-semibold transition-colors cursor-pointer ${
+              soloDisponibles
+                ? 'border-primario bg-primario-suave text-primario-oscuro'
+                : 'border-borde bg-white text-slate-700 hover:bg-slate-50'
+            }`}
           >
             <Filter className="w-4 h-4" />
             <span>Solo disponibles</span>
@@ -185,10 +239,11 @@ export function CatalogPage({ catalogServiceOverride }: CatalogPageProps) {
                 key={cat}
                 type="button"
                 onClick={() => setCategoriaSeleccionada(cat)}
-                className={`px-3.5 py-1.5 rounded-full text-xs sm:text-sm font-semibold border transition-colors cursor-pointer ${seleccionada
-                  ? 'bg-primario text-white border-primario'
-                  : 'bg-fondo text-slate-700 border-borde hover:bg-slate-100'
-                  }`}
+                className={`px-3.5 py-1.5 rounded-full text-xs sm:text-sm font-semibold border transition-colors cursor-pointer ${
+                  seleccionada
+                    ? 'bg-primario text-white border-primario'
+                    : 'bg-fondo text-slate-700 border-borde hover:bg-slate-100'
+                }`}
               >
                 {cat} ({contadoresPorCategoria[cat]})
               </button>
@@ -196,17 +251,44 @@ export function CatalogPage({ catalogServiceOverride }: CatalogPageProps) {
           })}
         </div>
 
-        <div className="flex items-center justify-between text-xs sm:text-sm text-slate-500 pt-1 border-t border-borde">
-          <span>Mostrando {productosFiltrados.length} productos</span>
-          {hayFiltrosActivos && (
-            <button
-              type="button"
-              onClick={limpiarFiltros}
-              className="font-semibold text-primario hover:text-primario-oscuro cursor-pointer"
+        <div className="flex flex-wrap items-center justify-between gap-3 text-xs sm:text-sm text-slate-500 pt-2 border-t border-borde">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+            <span>Mostrando {productosFiltrados.length} productos</span>
+            {productosFiltrados.length > 0 && (
+              <span className="text-slate-400">
+                · Viendo {indiceInicio + 1}–{indiceFin} · Página {paginaSegura} de {totalPaginas}
+              </span>
+            )}
+          </div>
+
+          <div className="flex items-center gap-3">
+            <label htmlFor="tamano-pagina-select" className="text-xs font-semibold text-slate-600">
+              Por página:
+            </label>
+            <select
+              id="tamano-pagina-select"
+              aria-label="Productos por página"
+              value={tamanoPagina}
+              onChange={(e) => setTamanoPagina(Number.parseInt(e.target.value, 10))}
+              className="rounded-lg border border-borde bg-white px-2.5 py-1 text-xs font-semibold text-slate-700 focus:border-primario focus:outline-none cursor-pointer"
             >
-              Limpiar filtros
-            </button>
-          )}
+              {TAMANOS_PAGINA.map((size) => (
+                <option key={size} value={size}>
+                  {size}
+                </option>
+              ))}
+            </select>
+
+            {hayFiltrosActivos && (
+              <button
+                type="button"
+                onClick={limpiarFiltros}
+                className="font-semibold text-primario hover:text-primario-oscuro cursor-pointer"
+              >
+                Limpiar filtros
+              </button>
+            )}
+          </div>
         </div>
       </section>
 
@@ -250,75 +332,157 @@ export function CatalogPage({ catalogServiceOverride }: CatalogPageProps) {
       )}
 
       {!cargando && !errorMensaje && productosFiltrados.length > 0 && (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
-          {productosFiltrados.map((producto) => (
-            <article
-              key={`${producto.idProducto}-${producto.nombre}`}
-              className="bg-white rounded-2xl border border-borde p-5 flex flex-col justify-between gap-4 hover:border-primario/40 hover:shadow-sm transition-all"
-            >
-              <div>
-                <div className="flex items-start justify-between gap-2.5">
-                  <div className="flex items-start gap-3 min-w-0">
-                    <ProductVisualBadge producto={producto} />
-                    <div className="min-w-0">
-                      <h2 className="text-sm font-bold text-slate-900 line-clamp-2 leading-snug">
-                        {producto.nombre}
-                      </h2>
-                      <p className="text-xs text-slate-500 break-words mt-0.5">
-                        {producto.servicio}
-                      </p>
+        <>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-5">
+            {productosPagina.map((producto) => (
+              <article
+                key={`${producto.idProducto}-${producto.nombre}`}
+                className="bg-white rounded-2xl border border-borde p-5 flex flex-col justify-between gap-4 hover:border-primario/40 hover:shadow-sm transition-all"
+              >
+                <div>
+                  <div className="flex items-start justify-between gap-2.5">
+                    <div className="flex items-start gap-3 min-w-0">
+                      <ProductVisualBadge producto={producto} />
+                      <div className="min-w-0">
+                        <h2 className="text-sm font-bold text-slate-900 line-clamp-2 leading-snug">
+                          {producto.nombre}
+                        </h2>
+                        <p className="text-xs text-slate-500 break-words mt-0.5">
+                          {producto.servicio}
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                  <span
-                    className={`shrink-0 px-2.5 py-0.5 rounded-full text-[11px] font-bold ${producto.disponible
-                      ? 'bg-emerald-50 text-emerald-700'
-                      : 'bg-red-50 text-red-700'
+                    <span
+                      className={`shrink-0 px-2.5 py-0.5 rounded-full text-[11px] font-bold ${
+                        producto.disponible
+                          ? 'bg-emerald-50 text-emerald-700'
+                          : 'bg-red-50 text-red-700'
                       }`}
-                  >
-                    {producto.disponible ? 'Disponible' : 'No disponible'}
+                    >
+                      {producto.disponible ? 'Disponible' : 'No disponible'}
+                    </span>
+                  </div>
+
+                  <p className="mt-3 text-xs text-slate-600 line-clamp-2 leading-relaxed">
+                    {producto.descripcion}
+                  </p>
+                </div>
+
+                <div className="pt-3.5 border-t border-borde space-y-3">
+                  <div className="flex items-baseline justify-between gap-2 flex-wrap">
+                    <p className="text-base font-extrabold text-primario-oscuro whitespace-nowrap">
+                      {producto.precio > 0
+                        ? `$${producto.precio.toFixed(2)} MXN`
+                        : 'Monto abierto'}
+                    </p>
+                    <p className="text-[11px] font-medium text-slate-500">
+                      Prod #{producto.idProducto} • Serv #{producto.idServicio}
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setProductoDetalle(producto)}
+                      className="w-full inline-flex items-center justify-center gap-1.5 rounded-xl border border-borde px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 cursor-pointer"
+                    >
+                      <Info className="w-3.5 h-3.5 text-primario shrink-0" />
+                      <span>Ver detalle</span>
+                    </button>
+                    <button
+                      type="button"
+                      disabled={!producto.disponible}
+                      onClick={() => irACompra(producto)}
+                      className="w-full inline-flex items-center justify-center gap-1.5 rounded-xl bg-primario-suave px-3 py-2 text-xs font-bold text-primario-oscuro hover:bg-primario hover:text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                    >
+                      <ShoppingCart className="w-3.5 h-3.5 shrink-0" />
+                      <span>Comprar</span>
+                    </button>
+                  </div>
+                </div>
+              </article>
+            ))}
+          </div>
+
+          <nav
+            aria-label="Paginación del catálogo"
+            className="bg-white rounded-2xl border border-borde px-4 py-3.5 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-xs"
+          >
+            <p className="text-xs sm:text-sm text-slate-600">
+              Página <span className="font-bold text-slate-900">{paginaSegura}</span> de{' '}
+              <span className="font-bold text-slate-900">{totalPaginas}</span> ({indiceInicio + 1}–
+              {indiceFin} de {productosFiltrados.length})
+            </p>
+
+            <div className="flex flex-wrap items-center justify-center gap-1.5">
+              <button
+                type="button"
+                disabled={paginaSegura <= 1}
+                onClick={() => irAPagina(1)}
+                aria-label="Primera página"
+                className="inline-flex items-center gap-1 rounded-xl border border-borde bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-45 disabled:cursor-not-allowed cursor-pointer"
+              >
+                <ChevronsLeft className="w-4 h-4" />
+                <span className="hidden sm:inline">Primera</span>
+              </button>
+
+              <button
+                type="button"
+                disabled={paginaSegura <= 1}
+                onClick={() => irAPagina(paginaSegura - 1)}
+                aria-label="Página anterior"
+                className="inline-flex items-center gap-1 rounded-xl border border-borde bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-45 disabled:cursor-not-allowed cursor-pointer"
+              >
+                <ChevronLeft className="w-4 h-4" />
+                <span>Anterior</span>
+              </button>
+
+              {elementosPaginacion.map((el, idx) =>
+                el === 'elipsis' ? (
+                  <span key={`elipsis-${idx}`} className="px-2 text-xs text-slate-400">
+                    ...
                   </span>
-                </div>
-
-                <p className="mt-3 text-xs text-slate-600 line-clamp-2 leading-relaxed">
-                  {producto.descripcion}
-                </p>
-              </div>
-
-              <div className="pt-3.5 border-t border-borde space-y-3">
-                <div className="flex items-baseline justify-between gap-2 flex-wrap">
-                  <p className="text-base font-extrabold text-primario-oscuro whitespace-nowrap">
-                    {producto.precio > 0
-                      ? `$${producto.precio.toFixed(2)} MXN`
-                      : 'Monto abierto'}
-                  </p>
-                  <p className="text-[11px] font-medium text-slate-500">
-                    Prod #{producto.idProducto} • Serv #{producto.idServicio}
-                  </p>
-                </div>
-
-                <div className="grid grid-cols-2 gap-2">
+                ) : (
                   <button
+                    key={el}
                     type="button"
-                    onClick={() => setProductoDetalle(producto)}
-                    className="w-full inline-flex items-center justify-center gap-1.5 rounded-xl border border-borde px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 cursor-pointer"
+                    aria-current={el === paginaSegura ? 'page' : undefined}
+                    onClick={() => irAPagina(el)}
+                    className={`min-w-8 rounded-xl px-2.5 py-1.5 text-xs font-bold transition-colors cursor-pointer ${
+                      el === paginaSegura
+                        ? 'bg-primario text-white'
+                        : 'border border-borde bg-white text-slate-700 hover:bg-slate-50'
+                    }`}
                   >
-                    <Info className="w-3.5 h-3.5 text-primario shrink-0" />
-                    <span>Ver detalle</span>
+                    {el}
                   </button>
-                  <button
-                    type="button"
-                    disabled={!producto.disponible}
-                    onClick={() => irACompra(producto)}
-                    className="w-full inline-flex items-center justify-center gap-1.5 rounded-xl bg-primario-suave px-3 py-2 text-xs font-bold text-primario-oscuro hover:bg-primario hover:text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
-                  >
-                    <ShoppingCart className="w-3.5 h-3.5 shrink-0" />
-                    <span>Comprar</span>
-                  </button>
-                </div>
-              </div>
-            </article>
-          ))}
-        </div>
+                ),
+              )}
+
+              <button
+                type="button"
+                disabled={paginaSegura >= totalPaginas}
+                onClick={() => irAPagina(paginaSegura + 1)}
+                aria-label="Página siguiente"
+                className="inline-flex items-center gap-1 rounded-xl border border-borde bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-45 disabled:cursor-not-allowed cursor-pointer"
+              >
+                <span>Siguiente</span>
+                <ChevronRight className="w-4 h-4" />
+              </button>
+
+              <button
+                type="button"
+                disabled={paginaSegura >= totalPaginas}
+                onClick={() => irAPagina(totalPaginas)}
+                aria-label="Última página"
+                className="inline-flex items-center gap-1 rounded-xl border border-borde bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-45 disabled:cursor-not-allowed cursor-pointer"
+              >
+                <span className="hidden sm:inline">Última</span>
+                <ChevronsRight className="w-4 h-4" />
+              </button>
+            </div>
+          </nav>
+        </>
       )}
 
       <ProductDetailModal
